@@ -95,7 +95,7 @@ test("shot log records misses and updates personal aim bias", async ({ page }) =
   }
   await expect(page.getByText(/1타 · Driver/)).toBeVisible();
   await page.getByRole("button",{name:"AI 공략",exact:true}).click();
-  await expect(page.getByText(/AI 목표.*좌중앙/)).toBeVisible();
+  await expect(page.locator(".recommend").filter({hasText:"AI 목표"})).toContainText("좌중앙");
 });
 
 test("practice checklist works", async ({ page }) => {
