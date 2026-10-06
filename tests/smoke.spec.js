@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("approved dashboard desktop geometry and screenshot", async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.setViewportSize({ width: 977, height: 740 });
   await page.reload();
   const side = await page.locator(".side").boundingBox();
   const top = await page.locator(".top").boundingBox();
@@ -14,14 +14,15 @@ test("approved dashboard desktop geometry and screenshot", async ({ page }, test
   await expect(boards).toHaveCount(2);
   const a = await boards.nth(0).boundingBox();
   const b = await boards.nth(1).boundingBox();
-  expect(Math.abs(side.width - 184)).toBeLessThanOrEqual(3);
+  expect(Math.abs(side.width - 124)).toBeLessThanOrEqual(3);
   expect(top.height).toBeGreaterThanOrEqual(65);
   expect(top.height).toBeLessThanOrEqual(82);
   expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(3);
   expect(Math.abs(a.width - b.width)).toBeLessThan(30);
-  expect(a.width).toBeGreaterThan(550);
-  await expect(page.locator(".visualMap").first()).toBeVisible();
-  await expect(page.getByText("공략 개념도").first()).toBeVisible();
+  expect(a.width).toBeGreaterThan(380);
+  await expect(page.locator(".visualMap.satellite").first()).toBeVisible();
+  await expect(page.locator(".coursePanel")).toHaveCount(2);
+  await expect(page.getByText(/위성풍 공략도/).first()).toBeVisible();
   const shot = await page.screenshot({ fullPage: true });
   await testInfo.attach("approved-dashboard-desktop",{body:shot,contentType:"image/png"});
 });
