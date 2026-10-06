@@ -2,3 +2,50 @@
 @media(max-width:1180px){.top .weatherTop{display:none}.courseStrips{grid-template-columns:1fr 1fr}.rotationGuide{grid-column:1/-1}.dualBoards{grid-template-columns:1fr}.coursePanel{max-width:none}.panelCore{min-height:540px}}
 @media(max-width:900px){.shell{display:block}.side{height:auto;position:relative;padding-bottom:0}.logo{display:flex;gap:8px}.logo small{display:none}.nav{grid-template-columns:repeat(5,1fr);display:grid}.nav button{display:flex;flex-direction:column;text-align:center;gap:2px;padding:8px 2px;font-size:10px}.clubmini,.version{display:none}.top{position:relative;height:auto;min-height:70px;flex-wrap:wrap}.dateBox{width:auto}.courseThumb{display:none}.top .stat{display:none}.title{font-size:20px}.top select{margin-left:auto}.modeTabs{grid-template-columns:repeat(3,1fr)}.courseStrips{grid-template-columns:1fr}.rotationGuide{grid-column:auto}.dualBoards{grid-template-columns:1fr}.roundBar{left:0;height:auto;min-height:56px;flex-wrap:wrap}.progressHoles{order:3;width:100%;overflow:auto;justify-content:flex-start}.panelCore{grid-template-columns:1fr}.visualMap{height:520px;min-height:0}.holeDetails{padding:8px}.cards,.formgrid{grid-template-columns:1fr 1fr}.scoregrid{grid-template-columns:repeat(3,1fr)}.clubgrid{grid-template-columns:1fr 1fr}.view{padding-bottom:105px}}
 @media(max-width:560px){.nav{grid-template-columns:repeat(2,1fr)}.modeTabs{grid-template-columns:1fr 1fr}.courseStrip{height:auto}.stripHoles{flex-wrap:wrap}.visualMap{height:430px}.innerTabs{grid-template-columns:repeat(2,1fr)}.infoSplit{grid-template-columns:1fr}.cards,.formgrid,.clubgrid{grid-template-columns:1fr}.scoregrid{grid-template-columns:repeat(2,1fr)}.recGrid{grid-template-columns:1fr}.panelTitle{font-size:18px}.panelTitle label{display:none}.allGrid{grid-template-columns:1fr}.allGrid>div{grid-template-columns:1fr 1fr}.roundBar>.roundTitle{display:none}}
+
+/* v4 pixel-match desktop layout: keeps the approved two-column dashboard down to tablet width */
+@media (min-width:761px){
+  .shell{grid-template-columns:124px 1fr}
+  .side{width:124px}
+  .logo{grid-template-columns:25px 1fr;padding:8px 7px 7px}
+  .logo .golfer{font-size:22px}.logo b{font-size:20px}.logo small{font-size:7px}
+  .nav button{grid-template-columns:22px 1fr;padding:10px 9px;font-size:12px}.nav button span{font-size:15px}
+  .clubmini{margin:7px 6px 0;padding:7px;font-size:9px;line-height:1.55}.clubmini .miniTitle{font-size:9px}.clubmini button{font-size:9px;padding:5px}
+  .version{font-size:8px;padding:7px}
+  .top{height:58px;min-height:58px;gap:6px;padding:4px 7px}
+  .dateBox{width:98px;padding:3px 6px;font-size:11px}.dateBox b{font-size:14px;margin-top:2px}
+  .courseThumb{width:66px;height:46px}
+  .title{font-size:18px;min-width:145px}.title small{font-size:9px;margin-top:4px}
+  .stat{padding:2px 8px;font-size:9px;min-width:55px}.stat b{font-size:12px}
+  .weatherTop{font-size:19px;padding-left:8px}.weatherTop span{font-size:9px}.weatherTop b{font-size:10px}
+  .top select{max-width:112px;padding:5px;font-size:9px}
+  .view{padding:4px 5px 52px}
+  .modeTabs{grid-template-columns:1.45fr repeat(6,1fr);gap:3px;margin-bottom:4px}
+  .modeTabs button{min-height:36px;font-size:11px;padding:3px 4px}.modeTabs button small{font-size:8px}
+  .courseStrips{grid-template-columns:1fr 1fr 230px;gap:5px;margin-bottom:4px}
+  .courseStrip{height:58px;padding:4px 7px;border-radius:5px}
+  .stripTitle{font-size:11px}.stripTitle b{font-size:14px}.stripHoles{gap:3px;margin-top:4px}.stripHoles button{width:27px;height:27px;font-size:10px}
+  .rotationGuide{padding:5px 7px;font-size:8px;gap:3px}
+  .dualBoards{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:5px}
+  .coursePanel{border-radius:5px}
+  .panelTitle{height:34px;padding:4px 7px;font-size:17px;gap:7px}.panelTitle small{font-size:9px}.panelTitle label{font-size:8px;padding:3px 6px}
+  .panelCore{grid-template-columns:44% 56%;min-height:410px}
+  .visualMap{min-height:410px;height:410px}
+  .holeDetails{padding:4px}
+  .innerTabs{grid-template-columns:repeat(4,1fr)}.innerTabs button{font-size:8px;padding:5px 2px}.innerTabs button:last-child{display:none}
+  .infoSplit{gap:4px;margin-top:4px}.infoSplit>div,.greenMini{padding:5px}.infoSplit h4,.greenMini h4{font-size:10px;margin-bottom:3px}.infoSplit dl{font-size:9px}.infoSplit dt,.infoSplit dd{padding:2px 3px}
+  .greenShape{height:60px;width:84px}.greenMini small{font-size:7px}
+  .strategyBox{padding:5px;margin-top:4px;font-size:8.5px;line-height:1.42}.strategyBox h4{font-size:10px;margin-bottom:3px}.strategyBox p{margin:2px 0}.chips span{font-size:7px;padding:1px 4px}
+  .hazardLabel{font-size:8px;padding:3px 4px;border-width:1px}.conceptBadge{font-size:7px;padding:3px 4px}
+  .clubRecommend{grid-template-columns:28px 1fr;padding:4px 6px}.clock{width:25px;height:25px;font-size:16px}.clubRecommend b{font-size:10px}.recGrid{gap:3px;margin-top:2px}.recGrid span{padding:3px}.recGrid small{font-size:7px}.recGrid strong{font-size:8px}
+  .panelActions{gap:4px;padding:0 5px 5px}.panelActions button{padding:7px;font-size:10px}
+  .roundBar{left:124px;height:46px;padding:5px 7px;gap:5px}.roundTitle{font-size:9px;gap:5px}.roundTitle b{padding:6px}.progressHoles{gap:2px}.progressHoles button{width:21px;height:21px;font-size:7px}.roundBar>button{padding:7px 9px;font-size:9px}
+}
+@media (min-width:761px) and (max-width:1180px){
+  .courseStrips{grid-template-columns:1fr 1fr 230px}
+  .rotationGuide{grid-column:auto}
+  .dualBoards{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .panelCore{min-height:410px}
+}
+
+.satelliteMap{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}.satelliteMap:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,20,10,.08),transparent 25%,transparent 75%,rgba(0,20,10,.1));pointer-events:none}.mapOverlay{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}.satelliteMap .hazardLabel{z-index:4}.satelliteBadge{z-index:4;background:#081c2de8!important;border:1px solid #7fdcf7;color:#fff!important}.courseStrip.lake,.courseStrip.mountain{background-size:cover;background-position:center}.courseStrip.lake{background-image:linear-gradient(90deg,rgba(5,77,156,.96) 0 45%,rgba(5,77,156,.25) 45% 100%)}.courseStrip.mountain{background-image:linear-gradient(90deg,rgba(166,60,5,.96) 0 45%,rgba(166,60,5,.28) 45% 100%)}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { builtInCourses, getCourseById } from "../data/courses";
+import { SATELLITE_MAPS } from "../data/satelliteMaps";
 
 const NAV=[
   ["home","⌂","홈"],["schedule","▣","라운드 일정"],["caddie","♟","AI 캐디"],["score","▤","스코어카드"],
@@ -236,29 +237,27 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
 }
 
 function VisualCourseMap({hole,courseName,profile,driver}){
-  const isLake=/lake/i.test(courseName),bend=Number(hole.map?.bend||0),water=hole.map?.water||"none";
-  const mid=180+bend*3,end=175-bend*2;
-  const fairway=`M180 635 C${180-bend*2} 550 ${mid} 485 ${mid} 405 C${mid+10} 320 ${end} 245 ${end} 165 C${end} 115 ${185+bend} 95 190 70`;
-  const aimX=profile.bias==="좌중앙"?165:profile.bias==="우중앙"?195:180;
-  return <div className="visualMap">
-    <svg viewBox="0 0 360 680" role="img" aria-label={courseName+" "+hole.hole+"홀 공략 개념도"}>
-      <defs><linearGradient id={"grass"+courseName+hole.hole} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#64ad52"/><stop offset="1" stopColor="#94cb66"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity=".35"/></filter></defs>
-      <rect width="360" height="680" fill="#214f2e"/>
-      <path d="M0 0H360V680H0Z" fill="#285d33"/>
-      <g opacity=".45">{Array.from({length:34},(_,i)=><circle key={i} cx={(i*47)%360} cy={(i*83)%680} r={18+(i%4)*6} fill={i%2?"#173f25":"#367743"}/>)}</g>
-      {(water!=="none"||isLake)&&<path d={(water==="left"||(!isLake&&water!=="right"))?"M0 135 C70 120 82 210 50 290 C20 370 78 430 62 540 C47 620 0 650 0 650Z":"M360 95 C300 110 286 190 314 260 C344 337 285 405 306 510 C320 590 360 630 360 630Z"} fill="#1887b8" opacity=".95"/>}
-      <path d={fairway} fill="none" stroke="#2e7838" strokeWidth="96" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d={fairway} fill="none" stroke={"url(#grass"+courseName+hole.hole+")"} strokeWidth="72" strokeLinecap="round" strokeLinejoin="round" filter="url(#shadow)"/>
-      <ellipse cx="190" cy="63" rx="53" ry="34" fill="#7fbe55" stroke="#b0d878" strokeWidth="5"/>
-      <g fill="#ead9a0" stroke="#d8c489" strokeWidth="2"><ellipse cx={135+((hole.hole*17)%35)} cy={150+((hole.hole*31)%100)} rx="24" ry="12"/><ellipse cx={225-((hole.hole*11)%32)} cy={250+((hole.hole*27)%160)} rx="26" ry="13"/><ellipse cx={125+((hole.hole*9)%55)} cy={380+((hole.hole*13)%100)} rx="22" ry="11"/></g>
-      <path d={`M180 620 Q${aimX} 420 ${aimX} 205`} fill="none" stroke="#6ed8ff" strokeWidth="3" strokeDasharray="8 7"/>
-      <circle cx="180" cy="620" r="12" fill="#ef2c31" stroke="#fff" strokeWidth="4"/>
-      <circle cx={aimX} cy={Math.max(260,520-driver)} r="8" fill="#fff" stroke="#1674ce" strokeWidth="4"/>
-      <circle cx="180" cy="492" r="6" fill="#ffe13a" stroke="#fff" strokeWidth="2"/><circle cx="180" cy="355" r="6" fill="#fff" stroke="#fff" strokeWidth="2"/>
-      <text x="192" y="488" fill="#fff" fontSize="18" fontWeight="900">150m</text><text x="192" y="350" fill="#fff" fontSize="18" fontWeight="900">200m</text><text x={aimX+8} y={Math.max(255,515-driver)} fill="#fff" fontSize="18" fontWeight="900">{driver}m</text>
+  const isLake=/lake/i.test(courseName);
+  const image=isLake?SATELLITE_MAPS.lake:SATELLITE_MAPS.mountain;
+  const aimLeft=profile.bias==="좌중앙"?"46%":profile.bias==="우중앙"?"54%":"50%";
+  const landingTop=Math.max(26,58-Math.min(30,driver/12));
+  return <div className="visualMap satelliteMap" style={{backgroundImage:`linear-gradient(180deg,rgba(1,20,10,.02),rgba(1,20,10,.16)),url(${image})`}}>
+    <svg className="mapOverlay" viewBox="0 0 220 430" role="img" aria-label={courseName+" "+hole.hole+"홀 위성형 공략도"}>
+      <defs>
+        <filter id={"glow"+courseName+hole.hole}><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <path d="M110 385 C106 340 106 300 108 255 C110 205 102 165 108 120 C110 98 108 75 110 48" fill="none" stroke="#43e8ff" strokeWidth="3" strokeDasharray="7 7" filter={"url(#glow"+courseName+hole.hole+")"}/>
+      <path d={"M110 385 Q"+(profile.bias==="좌중앙"?92:profile.bias==="우중앙"?128:110)+" 280 "+(profile.bias==="좌중앙"?96:profile.bias==="우중앙"?124:110)+" 185"} fill="none" stroke="#fff" strokeWidth="2" opacity=".92"/>
+      <circle cx="110" cy="385" r="9" fill="#e91f2b" stroke="#fff" strokeWidth="3"/>
+      <circle cx="110" cy="363" r="8" fill="#fff" stroke="#fff" strokeWidth="2"/>
+      <circle cx="110" cy="341" r="8" fill="#2574ff" stroke="#fff" strokeWidth="2"/>
+      <circle cx="110" cy="319" r="8" fill="#202020" stroke="#fff" strokeWidth="2"/>
+      <circle cx={aimLeft==="46%"?100:aimLeft==="54%"?120:110} cy={landingTop*4.3} r="7" fill="#fff" stroke="#00a2ff" strokeWidth="3"/>
+      <text x="120" y="242" fill="#fff" fontSize="17" fontWeight="900" stroke="#17341f" strokeWidth=".8">150m</text>
+      <text x="120" y="184" fill="#fff" fontSize="17" fontWeight="900" stroke="#17341f" strokeWidth=".8">{driver}m</text>
     </svg>
     {(hole.hazards||[]).slice(0,3).map((h,i)=><span className={"hazardLabel h"+i} key={h}>{h}</span>)}
-    <span className="conceptBadge">공략 개념도</span>
+    <span className="conceptBadge satelliteBadge">위성형 공략도 · 실제 위치 검증 전</span>
   </div>
 }
 
