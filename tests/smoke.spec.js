@@ -71,9 +71,10 @@ test("course database can add and remove a custom course", async ({ page }) => {
   await page.getByLabel("골프장명").fill("테스트CC");
   await page.getByLabel("지역").fill("대구");
   await page.getByRole("button",{name:"추가",exact:true}).click();
-  await expect(page.getByText("테스트CC",{exact:true})).toBeVisible();
-  await page.getByRole("button",{name:"삭제",exact:true}).click();
-  await expect(page.getByText("테스트CC",{exact:true})).toHaveCount(0);
+  const card=page.locator(".card").filter({hasText:"테스트CC"});
+  await expect(card).toBeVisible();
+  await card.getByRole("button",{name:"삭제",exact:true}).click();
+  await expect(page.locator(".card").filter({hasText:"테스트CC"})).toHaveCount(0);
 });
 
 test("practice checklist works", async ({ page }) => {
