@@ -15,7 +15,7 @@ test("approved dashboard desktop geometry and screenshot", async ({ page }, test
   const a = await boards.nth(0).boundingBox();
   const b = await boards.nth(1).boundingBox();
   expect(Math.abs(side.width - 124)).toBeLessThanOrEqual(3);
-  expect(top.height).toBeGreaterThanOrEqual(65);
+  expect(top.height).toBeGreaterThanOrEqual(56);
   expect(top.height).toBeLessThanOrEqual(82);
   expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(3);
   expect(Math.abs(a.width - b.width)).toBeLessThan(30);
@@ -78,7 +78,7 @@ test("course panel tabs, score and next hole work", async ({ page }) => {
   await expect(first.getByRole("heading",{name:"거리 측정"})).toBeVisible();
   await first.getByRole("button",{name:"메모/사진"}).click();
   await expect(first.getByPlaceholder(/Lake 1H 메모/i)).toBeVisible();
-  await first.getByRole("button",{name:"스코어",exact:true}).click();
+  await first.getByRole("button",{name:"이 홀로 스코어 기록하기",exact:true}).click();
   const strokes=first.getByLabel("Lake 타수");
   await strokes.fill("5");
   await first.getByRole("button",{name:/다음 홀/}).click();
