@@ -20,9 +20,9 @@ test("approved dashboard desktop geometry and screenshot", async ({ page }, test
   expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(3);
   expect(Math.abs(a.width - b.width)).toBeLessThan(30);
   expect(a.width).toBeGreaterThan(380);
-  await expect(page.locator(".visualMap.satellite").first()).toBeVisible();
+  await expect(page.locator(".visualMap.satelliteMap").first()).toBeVisible();
   await expect(page.locator(".coursePanel")).toHaveCount(2);
-  await expect(page.getByText(/위성풍 공략도/).first()).toBeVisible();
+  await expect(page.getByText(/위성형 공략도/).first()).toBeVisible();
   const shot = await page.screenshot({ fullPage: true });
   await testInfo.attach("approved-dashboard-desktop",{body:shot,contentType:"image/png"});
 });
