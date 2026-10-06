@@ -33,13 +33,13 @@ test("all left navigation opens a functional screen", async ({ page }) => {
     ["연습/코칭","연습/코칭"],["장비/클럽","장비/클럽"],["날씨/바람","날씨/바람"],["설정","설정"]
   ];
   for(const [button,heading] of items){
-    await page.getByRole("button",{name:button,exact:true}).click();
+    await page.locator(".nav").getByRole("button",{name:button,exact:true}).click();
     await expect(page.getByText(heading,{exact:false}).first()).toBeVisible();
   }
 });
 
 test("all top caddie tabs are clickable and change real content", async ({ page }) => {
-  await page.getByRole("button",{name:"AI 캐디",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   await page.getByRole("button",{name:"골프장 정보",exact:true}).click();
   await expect(page.getByText(/현재 등록 코스/)).toBeVisible();
   await page.getByRole("button",{name:"코스 로테이션",exact:true}).click();
@@ -52,13 +52,13 @@ test("all top caddie tabs are clickable and change real content", async ({ page 
   await expect(page.locator(".coursePanel")).toHaveCount(2);
   await page.getByRole("button",{name:"스코어카드",exact:true}).click();
   await expect(page.getByText("18홀 스코어카드")).toBeVisible();
-  await page.getByRole("button",{name:"AI 캐디",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   await page.getByRole("button",{name:"클럽 추천",exact:true}).click();
   await expect(page.getByText("장비/클럽")).toBeVisible();
 });
 
 test("all 18 course strip hole buttons work", async ({ page }) => {
-  await page.getByRole("button",{name:"AI 캐디",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   const buttons=page.locator(".stripHoles button");
   await expect(buttons).toHaveCount(18);
   for(let i=0;i<18;i++){
@@ -69,7 +69,7 @@ test("all 18 course strip hole buttons work", async ({ page }) => {
 });
 
 test("course panel tabs, score and next hole work", async ({ page }) => {
-  await page.getByRole("button",{name:"AI 캐디",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   const first=page.locator(".coursePanel").first();
   await first.getByRole("button",{name:"공략 가이드"}).click();
   await expect(first.getByText("AI 공략 가이드")).toBeVisible();
@@ -85,16 +85,16 @@ test("course panel tabs, score and next hole work", async ({ page }) => {
 });
 
 test("club distance changes AI recommendation and landing label", async ({ page }) => {
-  await page.getByRole("button",{name:"장비/클럽",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
   await page.getByLabel("Driver").fill("230");
-  await page.getByRole("button",{name:"AI 캐디",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   const first=page.locator(".coursePanel").first();
   await expect(first.getByText(/드라이버 \(230m\)/)).toBeVisible();
   await expect(first.locator(".visualMap svg")).toBeVisible();
 });
 
 test("all holes modal opens and selects a hole", async ({ page }) => {
-  await page.getByRole("button",{name:"AI 캐디",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   await page.getByRole("button",{name:/전체 18홀 보기/}).click();
   await expect(page.getByRole("heading",{name:"전체 18홀"})).toBeVisible();
   const modal=page.locator(".allHoles");
@@ -104,20 +104,20 @@ test("all holes modal opens and selects a hole", async ({ page }) => {
 });
 
 test("round settings and score persist after reload", async ({ page }) => {
-  await page.getByRole("button",{name:"라운드 일정",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"라운드 일정",exact:true}).click();
   await page.getByLabel("티타임").fill("13:20");
-  await page.getByRole("button",{name:"스코어카드",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"스코어카드",exact:true}).click();
   const score=page.locator(".scorecell").first().getByPlaceholder("타수");
   await score.fill("5");
   await page.reload();
-  await page.getByRole("button",{name:"라운드 일정",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"라운드 일정",exact:true}).click();
   await expect(page.getByLabel("티타임")).toHaveValue("13:20");
-  await page.getByRole("button",{name:"스코어카드",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"스코어카드",exact:true}).click();
   await expect(page.locator(".scorecell").first().getByPlaceholder("타수")).toHaveValue("5");
 });
 
 test("course DB can search add edit and remove future golf courses", async ({ page }) => {
-  await page.getByRole("button",{name:"골프장 DB",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"골프장 DB",exact:true}).click();
   await page.getByLabel("골프장 검색").fill("그레이스");
   await expect(page.locator(".card").filter({hasText:"청도 그레이스CC"})).toBeVisible();
   await page.getByLabel("골프장 검색").fill("");
@@ -136,7 +136,7 @@ test("course DB can search add edit and remove future golf courses", async ({ pa
 test("mobile layout keeps controls clickable without horizontal overflow", async ({ page }, testInfo) => {
   await page.setViewportSize({width:412,height:915});
   await page.reload();
-  await page.getByRole("button",{name:"AI 캐디",exact:true}).click();
+  await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   const bodyWidth=await page.evaluate(()=>document.body.scrollWidth);
   const viewport=await page.evaluate(()=>window.innerWidth);
   expect(bodyWidth).toBeLessThanOrEqual(viewport+2);
