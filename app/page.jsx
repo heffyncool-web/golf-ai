@@ -237,31 +237,58 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
 
 function VisualCourseMap({hole,courseName,profile,driver}){
   const isLake=/lake/i.test(courseName),bend=Number(hole.map?.bend||0),water=hole.map?.water||"none";
-  const mid=180+bend*3,end=175-bend*2;
-  const fairway=`M180 635 C${180-bend*2} 550 ${mid} 485 ${mid} 405 C${mid+10} 320 ${end} 245 ${end} 165 C${end} 115 ${185+bend} 95 190 70`;
-  const aimX=profile.bias==="좌중앙"?165:profile.bias==="우중앙"?195:180;
-  return <div className="visualMap">
-    <svg viewBox="0 0 360 680" role="img" aria-label={courseName+" "+hole.hole+"홀 공략 개념도"}>
-      <defs><linearGradient id={"grass"+courseName+hole.hole} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#64ad52"/><stop offset="1" stopColor="#94cb66"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity=".35"/></filter></defs>
-      <rect width="360" height="680" fill="#214f2e"/>
-      <path d="M0 0H360V680H0Z" fill="#285d33"/>
-      <g opacity=".45">{Array.from({length:34},(_,i)=><circle key={i} cx={(i*47)%360} cy={(i*83)%680} r={18+(i%4)*6} fill={i%2?"#173f25":"#367743"}/>)}</g>
-      {(water!=="none"||isLake)&&<path d={(water==="left"||(!isLake&&water!=="right"))?"M0 135 C70 120 82 210 50 290 C20 370 78 430 62 540 C47 620 0 650 0 650Z":"M360 95 C300 110 286 190 314 260 C344 337 285 405 306 510 C320 590 360 630 360 630Z"} fill="#1887b8" opacity=".95"/>}
-      <path d={fairway} fill="none" stroke="#2e7838" strokeWidth="96" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d={fairway} fill="none" stroke={"url(#grass"+courseName+hole.hole+")"} strokeWidth="72" strokeLinecap="round" strokeLinejoin="round" filter="url(#shadow)"/>
-      <ellipse cx="190" cy="63" rx="53" ry="34" fill="#7fbe55" stroke="#b0d878" strokeWidth="5"/>
-      <g fill="#ead9a0" stroke="#d8c489" strokeWidth="2"><ellipse cx={135+((hole.hole*17)%35)} cy={150+((hole.hole*31)%100)} rx="24" ry="12"/><ellipse cx={225-((hole.hole*11)%32)} cy={250+((hole.hole*27)%160)} rx="26" ry="13"/><ellipse cx={125+((hole.hole*9)%55)} cy={380+((hole.hole*13)%100)} rx="22" ry="11"/></g>
-      <path d={`M180 620 Q${aimX} 420 ${aimX} 205`} fill="none" stroke="#6ed8ff" strokeWidth="3" strokeDasharray="8 7"/>
-      <circle cx="180" cy="620" r="12" fill="#ef2c31" stroke="#fff" strokeWidth="4"/>
-      <circle cx={aimX} cy={Math.max(260,520-driver)} r="8" fill="#fff" stroke="#1674ce" strokeWidth="4"/>
-      <circle cx="180" cy="492" r="6" fill="#ffe13a" stroke="#fff" strokeWidth="2"/><circle cx="180" cy="355" r="6" fill="#fff" stroke="#fff" strokeWidth="2"/>
-      <text x="192" y="488" fill="#fff" fontSize="18" fontWeight="900">150m</text><text x="192" y="350" fill="#fff" fontSize="18" fontWeight="900">200m</text><text x={aimX+8} y={Math.max(255,515-driver)} fill="#fff" fontSize="18" fontWeight="900">{driver}m</text>
+  const seed=hole.hole+(isLake?11:37),aimX=profile.bias==="좌중앙"?165:profile.bias==="우중앙"?195:180;
+  const mid=176+bend*3,end=176-bend*2;
+  const fairway=`M180 650 C${178-bend} 570 ${mid} 500 ${mid} 430 C${mid+12} 350 ${end} 270 ${end} 185 C${end} 120 ${184+bend} 94 188 76`;
+  const trees=Array.from({length:120},(_,i)=>{
+    const side=i%2===0?1:-1, band=Math.floor(i/2),y=(band*17+((i*seed)%13))%670;
+    const center=180+Math.sin((y+seed)*.018)*bend*2.2;
+    const x=center+side*(78+((i*29+seed*7)%92));
+    const r=5+((i*11+seed)%7);
+    const palette=["#173f25","#1f542d","#2c6938","#356f3b","#244b2a"];
+    return <circle key={i} cx={Math.max(5,Math.min(355,x))} cy={y} r={r} fill={palette[(i+seed)%palette.length]} opacity={.88}/>;
+  });
+  const roadX=isLake?48:310;
+  return <div className="visualMap satellite">
+    <svg viewBox="0 0 360 680" role="img" aria-label={courseName+" "+hole.hole+"홀 위성풍 공략도"}>
+      <defs>
+        <linearGradient id={"rough"+courseName+hole.hole} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#315b32"/><stop offset=".48" stopColor="#21492a"/><stop offset="1" stopColor="#3e6b38"/></linearGradient>
+        <linearGradient id={"fair"+courseName+hole.hole} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#77bd52"/><stop offset=".52" stopColor="#65ad49"/><stop offset="1" stopColor="#8dcc61"/></linearGradient>
+        <linearGradient id={"water"+courseName+hole.hole} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2d9cc4"/><stop offset=".55" stopColor="#176b92"/><stop offset="1" stopColor="#0e4e72"/></linearGradient>
+        <filter id={"terrain"+courseName+hole.hole}><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="3" seed={seed}/><feColorMatrix values=".24 0 0 0 0 .15 .30 0 0 0 .10 .12 .22 0 0 0 0 0 .22 0"/><feBlend mode="multiply" in2="SourceGraphic"/></filter>
+        <filter id={"shadow"+courseName+hole.hole}><feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity=".45"/></filter>
+      </defs>
+      <rect width="360" height="680" fill={"url(#rough"+courseName+hole.hole+")"}/>
+      <rect width="360" height="680" fill="#315d36" opacity=".48" filter={"url(#terrain"+courseName+hole.hole+")"}/>
+      <g>{trees}</g>
+      {(water!=="none"||isLake)&&<path d={(water==="left"||(!isLake&&water!=="right"))?"M0 75 C62 92 82 160 57 225 C32 290 72 345 58 423 C44 503 65 578 18 655 L0 665Z":"M360 48 C308 78 294 142 315 205 C340 275 300 335 310 405 C322 492 293 578 360 654Z"} fill={"url(#water"+courseName+hole.hole+")"} opacity=".98"/>}
+      <path d={`M${roadX} 680 C${roadX+18} 560 ${roadX-12} 480 ${roadX+10} 395 C${roadX+28} 315 ${roadX-5} 210 ${roadX+18} 88`} fill="none" stroke="#c9b99b" strokeWidth="8" opacity=".75"/>
+      <path d={`M${roadX} 680 C${roadX+18} 560 ${roadX-12} 480 ${roadX+10} 395 C${roadX+28} 315 ${roadX-5} 210 ${roadX+18} 88`} fill="none" stroke="#91846e" strokeWidth="2" opacity=".85"/>
+      <path d={fairway} fill="none" stroke="#21482a" strokeWidth="104" strokeLinecap="round" strokeLinejoin="round" opacity=".95"/>
+      <path d={fairway} fill="none" stroke={"url(#fair"+courseName+hole.hole+")"} strokeWidth="76" strokeLinecap="round" strokeLinejoin="round" filter={"url(#shadow"+courseName+hole.hole+")"}/>
+      <path d={fairway} fill="none" stroke="#9dd875" strokeWidth="34" strokeLinecap="round" strokeLinejoin="round" opacity=".22"/>
+      <ellipse cx="188" cy="68" rx="54" ry="35" fill="#8dcf66" stroke="#b7e189" strokeWidth="5"/>
+      <ellipse cx="188" cy="68" rx="25" ry="18" fill="#7abd56" opacity=".75"/>
+      <g fill="#eee0a9" stroke="#c8b97f" strokeWidth="2">
+        <ellipse cx={134+((hole.hole*17)%32)} cy={145+((hole.hole*29)%88)} rx="23" ry="10"/>
+        <ellipse cx={226-((hole.hole*9)%30)} cy={242+((hole.hole*23)%145)} rx="25" ry="11"/>
+        <ellipse cx={125+((hole.hole*7)%54)} cy={375+((hole.hole*11)%94)} rx="22" ry="10"/>
+        <ellipse cx={214-((hole.hole*5)%36)} cy={96+((hole.hole*17)%70)} rx="17" ry="8"/>
+      </g>
+      <path d={`M180 630 Q${aimX} 420 ${aimX} 192`} fill="none" stroke="#70e5ff" strokeWidth="4" strokeDasharray="11 7" opacity=".95"/>
+      <circle cx="180" cy="620" r="12" fill="#ef2936" stroke="#fff" strokeWidth="4"/>
+      <circle cx="180" cy="642" r="9" fill="#fff" stroke="#fff" strokeWidth="2"/><circle cx="180" cy="662" r="9" fill="#225fbd" stroke="#fff" strokeWidth="2"/>
+      <circle cx={aimX} cy={Math.max(258,518-driver)} r="8" fill="#fff" stroke="#1674ce" strokeWidth="4"/>
+      <circle cx="180" cy="492" r="6" fill="#ffe136" stroke="#fff" strokeWidth="2"/><circle cx="180" cy="355" r="6" fill="#fff" stroke="#fff" strokeWidth="2"/>
+      <text x="193" y="489" fill="#fff" fontSize="18" fontWeight="900" paintOrder="stroke" stroke="#1c492d" strokeWidth="3">150m</text>
+      <text x="193" y="351" fill="#fff" fontSize="18" fontWeight="900" paintOrder="stroke" stroke="#1c492d" strokeWidth="3">200m</text>
+      <text x={aimX+8} y={Math.max(254,514-driver)} fill="#fff" fontSize="18" fontWeight="900" paintOrder="stroke" stroke="#1c492d" strokeWidth="3">{driver}m</text>
+      <path d={`M${isLake?285:70} 92 C${isLake?300:54} 185 ${isLake?310:47} 278 ${isLake?300:58} 380 C${isLake?294:66} 470 ${isLake?310:51} 555 ${isLake?292:72} 622`} fill="none" stroke="#ef2028" strokeWidth="5" strokeDasharray="8 7"/>
     </svg>
     {(hole.hazards||[]).slice(0,3).map((h,i)=><span className={"hazardLabel h"+i} key={h}>{h}</span>)}
-    <span className="conceptBadge">공략 개념도</span>
+    <span className="conceptBadge">위성풍 공략도 · 실제 항공사진 아님</span>
   </div>
 }
-
 function GreenMini({courseIndex}){return <div className="greenMini"><h4>그린 형태</h4><div className="greenShape"><span className={courseIndex?"diag":"cross"}>↔</span></div><small>{courseIndex?"좌측 높음　→　우측 낮음":"앞쪽 낮음　↔　뒤쪽 높음"}</small></div>}
 function StrategyBox({title,icon,children}){return <div className="strategyBox"><h4><span>{icon}</span>{title}</h4>{children}</div>}
 
