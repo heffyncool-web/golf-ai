@@ -40,20 +40,20 @@ test("all left navigation opens a functional screen", async ({ page }) => {
 
 test("all top caddie tabs are clickable and change real content", async ({ page }) => {
   await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
-  await page.getByRole("button",{name:"골프장 정보",exact:true}).click();
+  await page.locator(".modeTabs").getByRole("button",{name:"골프장 정보",exact:true}).click();
   await expect(page.getByText(/현재 등록 코스/)).toBeVisible();
-  await page.getByRole("button",{name:"코스 로테이션",exact:true}).click();
+  await page.locator(".modeTabs").getByRole("button",{name:"코스 로테이션",exact:true}).click();
   await expect(page.getByText("코스 로테이션",{exact:true}).last()).toBeVisible();
-  await page.getByRole("button",{name:"AI 공략 추천",exact:true}).click();
+  await page.locator(".modeTabs").getByRole("button",{name:"AI 공략 추천",exact:true}).click();
   await expect(page.locator(".coursePanel")).toHaveCount(2);
-  await page.getByRole("button",{name:"메모/사진",exact:true}).click();
+  await page.locator(".modeTabs").getByRole("button",{name:"메모/사진",exact:true}).click();
   await expect(page.getByPlaceholder(/핀 위치, 캐디 조언/)).toBeVisible();
-  await page.getByRole("button",{name:"실전 18홀 모드",exact:false}).click();
+  await page.locator(".modeTabs").getByRole("button",{name:"실전 18홀 모드",exact:false}).click();
   await expect(page.locator(".coursePanel")).toHaveCount(2);
-  await page.getByRole("button",{name:"스코어카드",exact:true}).click();
+  await page.locator(".modeTabs").getByRole("button",{name:"스코어카드",exact:true}).click();
   await expect(page.getByText("18홀 스코어카드")).toBeVisible();
   await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
-  await page.getByRole("button",{name:"클럽 추천",exact:true}).click();
+  await page.locator(".modeTabs").getByRole("button",{name:"클럽 추천",exact:true}).click();
   await expect(page.getByText("장비/클럽")).toBeVisible();
 });
 
@@ -74,7 +74,7 @@ test("course panel tabs, score and next hole work", async ({ page }) => {
   await first.getByRole("button",{name:"공략 가이드"}).click();
   await expect(first.getByText("AI 공략 가이드")).toBeVisible();
   await first.getByRole("button",{name:"거리 측정"}).click();
-  await expect(first.getByText("거리 측정")).toBeVisible();
+  await expect(first.getByRole("heading",{name:"거리 측정"})).toBeVisible();
   await first.getByRole("button",{name:"메모/사진"}).click();
   await expect(first.getByPlaceholder(/Lake 1H 메모/i)).toBeVisible();
   await first.getByRole("button",{name:"스코어"}).click();
