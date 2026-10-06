@@ -26,8 +26,7 @@ function rad(v){return v*Math.PI/180}
 function distanceMeters(a,b){
   if(!a||!b?.lat||!b?.lng)return null;
   const R=6371000,dLat=rad(b.lat-a.lat),dLng=rad(b.lng-a.lng);
-  const x=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLat/2===999?0:rad(b.lng-a.lng)/2)**2;
-  const y=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
+   const y=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
   return Math.round(2*R*Math.asin(Math.sqrt(y)));
 }
 function bearing(a,b){
@@ -108,7 +107,7 @@ export default function Page(){
   return <div className="shell">
     <aside className="side">
       <div className="logo"><span className="golfer">⛳</span><b>Golf <i>AI</i></b><small>AI CADDIE & COACH</small></div>
-      <nav className="nav">{NAV.map(([id,icon,label])=><button key={id} className={view===id?"active":""} onClick={()=>setView(id)}><span>{icon}</span>{label}</button>)}</nav>
+      <nav className="nav">{NAV.map(([id,icon,label])=><button key={id} aria-label={label} className={view===id?"active":""} onClick={()=>setView(id)}><span aria-hidden="true">{icon}</span>{label}</button>)}</nav>
       <div className="clubmini"><div className="miniTitle">◉ 내 클럽 거리 (평균)</div>{Object.entries(clubs).map(([k,v])=><span key={k}>{k}<em>{v}m</em></span>)}<button onClick={()=>setView("equipment")}>클럽 거리 설정</button></div>
       <div className="version">Golf AI v1.0</div>
     </aside>
