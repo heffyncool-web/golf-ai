@@ -54,7 +54,7 @@ test("all top caddie tabs are clickable and change real content", async ({ page 
   await expect(page.getByText("18홀 스코어카드")).toBeVisible();
   await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   await page.locator(".modeTabs").getByRole("button",{name:"클럽 추천",exact:true}).click();
-  await expect(page.getByText("장비/클럽")).toBeVisible();
+  await expect(page.getByRole("heading",{name:"장비/클럽",exact:true})).toBeVisible();
 });
 
 test("all 18 course strip hole buttons work", async ({ page }) => {
@@ -77,7 +77,7 @@ test("course panel tabs, score and next hole work", async ({ page }) => {
   await expect(first.getByRole("heading",{name:"거리 측정"})).toBeVisible();
   await first.getByRole("button",{name:"메모/사진"}).click();
   await expect(first.getByPlaceholder(/Lake 1H 메모/i)).toBeVisible();
-  await first.getByRole("button",{name:"스코어"}).click();
+  await first.getByRole("button",{name:"스코어",exact:true}).click();
   const strokes=first.getByLabel("Lake 타수");
   await strokes.fill("5");
   await first.getByRole("button",{name:/다음 홀/}).click();
