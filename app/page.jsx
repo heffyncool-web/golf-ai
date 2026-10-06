@@ -90,7 +90,7 @@ export default function Page(){
       <section className="view">
         {view==="home" && <Home round={round} course={course} totalScore={totalScore} setView={setView}/>}
         {view==="schedule" && <Schedule round={round} setRound={setRound}/>}
-        {view==="caddie" && <Caddie course={course} rotation={rotation} step={step} setStep={setStep} tab={tab} setTab={setTab} currentCourseName={currentCourseName} hole={currentHole} driver={driver} remain={remain} second={second} weather={weather} memo={memo} setMemo={setMemo} score={scores[step]} setScore={(k,v)=>setScoreField(step,k,v)} next={next} prev={prev}/>}
+        {view==="caddie" && <Caddie course={course} rotation={rotation} step={step} setStep={setStep} tab={tab} setTab={setTab} currentCourseName={currentCourseName} hole={currentHole} driver={driver} remain={remain} second={second} weather={weather} clubs={clubs} memo={memo} setMemo={setMemo} score={scores[step]} setScore={(k,v)=>setScoreField(step,k,v)} next={next} prev={prev}/>}
         {view==="score" && <Score scores={scores} setScoreField={setScoreField}/>}
         {view==="courses" && <Courses builtInCourses={builtInCourses} customCourses={customCourses} addCourse={addCourse} setCustomCourses={setCustomCourses}/>}
         {view==="swing" && <Swing/>}
@@ -108,15 +108,15 @@ function Card({t,v}){return <div className="card"><small>{t}</small><b>{v}</b></
 
 function Schedule({round,setRound}){return <div className="panel"><h2>라운드 일정</h2><div className="formgrid">{Object.entries({date:"날짜",time:"티타임",players:"인원",fee:"그린피",caddie:"캐디"}).map(([k,l])=><label key={k}>{l}<input value={round[k]} type={k==="date"?"date":k==="time"?"time":k==="players"||k==="fee"?"number":"text"} onChange={e=>setRound({...round,[k]:e.target.value})}/></label>)}</div><p className="ok">입력값은 브라우저에 자동 저장됩니다.</p></div>}
 
-function Caddie({course,rotation,step,setStep,tab,setTab,currentCourseName,hole,driver,remain,second,weather,memo,setMemo,score,setScore,next,prev}){
+function Caddie({course,rotation,step,setStep,tab,setTab,currentCourseName,hole,driver,remain,second,weather,clubs,memo,setMemo,score,setScore,next,prev}){
   return <div>
     <div className="tabs">{["info","rotation","score","ai","memo"].map(x=><button key={x} className={tab===x?"on":""} onClick={()=>setTab(x)}>{({info:"골프장 정보",rotation:"코스 로테이션",score:"스코어",ai:"AI 공략 추천",memo:"메모/사진"})[x]}</button>)}</div>
     <div className="rotation">{rotation.map((r,ri)=><div className={"rot "+(ri?"orange":"")} key={r}><b>{ri?"후반":"전반"} · {r}</b><div className="holes">{Array.from({length:9},(_,i)=><button key={i} className={step===ri*9+i?"on":""} onClick={()=>setStep(ri*9+i)}>{i+1}</button>)}</div></div>)}</div>
     {tab==="info" && <div className="panel"><h2>{course.name}</h2><p>{course.region} · {course.venueType}</p><p>현재 선택 코스: <b>{currentCourseName}</b></p></div>}
     {tab==="rotation" && <div className="panel"><h2>코스 로테이션</h2><p>{rotation.join(" → ")}</p><p className="warn">당일 운영에 따라 변경될 수 있으므로 스타트하우스에서 최종 확인하세요.</p></div>}
     {tab==="score" && <div className="panel"><h2>{currentCourseName} {hole?.hole}H 스코어</h2><div className="formgrid"><label>타수<input type="number" value={score.strokes} onChange={e=>setScore("strokes",e.target.value)}/></label><label>퍼트<input type="number" value={score.putts} onChange={e=>setScore("putts",e.target.value)}/></label><label>벌타<input type="number" value={score.penalty} onChange={e=>setScore("penalty",e.target.value)}/></label></div></div>}
-    {tab==="ai" && hole && <div className="board"><div className="boardhead">{currentCourseName.toUpperCase()} {hole.hole}H <small>Par {hole.par} · {hole.distance||"-"}m</small></div><div className="boardbody"><HoleMap hole={hole} driver={driver}/><div className="strategy"><h3>{hole.title}</h3><p>{hole.strategy}</p><div className="chips">{hole.hazards.map(h=><span key={h}>{h}</span>)}</div><div className="recommend"><b>티샷</b> {hole.par===3?nearestClub(DEFAULT_CLUBS,hole.distance):"Driver"} · 예상 {driver}m<br/><b>예상 잔여</b> {remain}m · <b>다음 추천</b> {second}<br/><b>바람</b> {weather.direction} {weather.wind}m/s</div></div></div></div>}
-    {tab==="memo" && <div className="panel"><h2>홀 메모/사진</h2><textarea value={memo} onChange={e=>setMemo(e.target.value)} placeholder="핀 위치, 캐디 조언, 미스 방향 등을 기록하세요."/ ><input type="file" accept="image/*" onChange={e=>{if(e.target.files?.[0]) alert("사진이 선택되었습니다. 서버 저장은 추후 계정 연동 단계에서 추가합니다.");}}/></div>}
+    {tab==="ai" && hole && <div className="board"><div className="boardhead">{currentCourseName.toUpperCase()} {hole.hole}H <small>Par {hole.par} · {hole.distance||"-"}m</small></div><div className="boardbody"><HoleMap hole={hole} driver={driver}/><div className="strategy"><h3>{hole.title}</h3><p>{hole.strategy}</p><div className="chips">{hole.hazards.map(h=><span key={h}>{h}</span>)}</div><div className="recommend"><b>티샷</b> {hole.par===3?nearestClub(clubs,hole.distance):"Driver"} · 예상 {driver}m<br/><b>예상 잔여</b> {remain}m · <b>다음 추천</b> {second}<br/><b>바람</b> {weather.direction} {weather.wind}m/s</div></div></div></div>}
+    {tab==="memo" && <div className="panel"><h2>홀 메모/사진</h2><textarea value={memo} onChange={e=>setMemo(e.target.value)} placeholder="핀 위치, 캐디 조언, 미스 방향 등을 기록하세요."/><input type="file" accept="image/*" onChange={e=>{if(e.target.files?.[0]) alert("사진이 선택되었습니다. 서버 저장은 추후 계정 연동 단계에서 추가합니다.");}}/></div>}
     <div className="bottomnav"><button onClick={prev} disabled={step===0}>◀ 이전 홀</button><b>{step+1}/18</b><button onClick={next} disabled={step===17}>다음 홀 ▶</button></div>
   </div>
 }
