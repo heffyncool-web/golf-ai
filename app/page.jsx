@@ -116,7 +116,7 @@ export default function Page(){
     <main className="main">
       <header className="top">
         <div className="dateBox"><strong>{round.date}</strong><b>D-12</b></div>
-        <div className="courseThumb" aria-hidden="true"/>
+        <div className="courseThumb" aria-hidden="true" style={{backgroundImage:`url(${SATELLITE_MAPS.lake})`}}/>
         <div className="title">{course.name}<small>{course.region}</small></div>
         <div className="stat">티타임<b>{round.time}</b></div>
         <div className="stat">인원<b>{round.players}인</b></div>
@@ -164,7 +164,7 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,scores,shots,setSco
     </div>
 
     <div className="courseStrips">
-      {names.map((name,ci)=><div className={"courseStrip "+(ci===1?"mountain":"lake")} key={name}>
+      {names.map((name,ci)=><div className={"courseStrip "+(ci===1?"mountain":"lake")} key={name} style={{backgroundImage:`linear-gradient(90deg,${ci===1?"rgba(166,60,5,.96)":"rgba(5,77,156,.96)"} 0 44%,rgba(0,0,0,.18) 44% 100%),url(${ci===1?SATELLITE_MAPS.mountain:SATELLITE_MAPS.lake})`}}>
         <div className="stripTitle">{ci===0?"전반":"후반"} <b>{name.toUpperCase()} 코스</b> <small>(Par 36)</small></div>
         <div className="stripHoles">{Array.from({length:9},(_,i)=><button key={i} className={selected[ci]===i?"on":""} onClick={()=>setHole(ci,i)}>{i+1}</button>)}</div>
       </div>)}
@@ -202,10 +202,10 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   const relation=weather.relation==="자동"?(autoRelation||"관계 미확인"):weather.relation;
   const driver=Number(clubs.Driver)||0,remain=gpsRemain??Math.max(0,Number(hole.distance||0)-driver),second=nearestClub(clubs,Math.min(190,remain));
   const approach=nearestClub(clubs,Math.min(100,Math.max(35,Math.round(remain*.35))));
-  const [shotClub,setShotClub]=useState("Driver"),[shotDist,setShotDist]=useState(""),[miss,setMiss]=useState("정타");
+  const [shotClub,setShotClub]=useState("Driver"),[shotDist,setShotDist]=useState(""),[miss,setMiss]=useState("정타"),[fullMap,setFullMap]=useState(false),[photo,setPhoto]=useState("");
   const color=courseIndex===0?"blue":"orange";
   return <article className={"coursePanel "+color}>
-    <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{hole.distance}m</small><label>홀 전체보기 <input type="checkbox"/></label></div>
+    <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{hole.distance}m</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
       <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver}/>
       <div className="holeDetails">
@@ -227,12 +227,13 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
 
         {panelTab==="guide"&&<div className="detailPanel"><h4>AI 공략 가이드</h4><p><b>1.</b> 티샷 목표는 {profile.bias}. 좌 미스 {profile.left}, 우 미스 {profile.right} 기록을 반영합니다.</p><p><b>2.</b> 남은거리 {remain}m에서 추천 클럽은 {second}입니다.</p><p><b>3.</b> 현재 바람: {compass(weather.windDeg)} {weather.wind}m/s · {relation}</p><p><b>4.</b> 위험요소: {(hole.hazards||[]).join(", ")||"세부 위험 확인"}</p></div>}
         {panelTab==="distance"&&<div className="detailPanel"><h4>거리 측정</h4><div className="liveBtns"><button onClick={()=>requestLocation()}>GPS 현재위치</button><button onClick={()=>fetchLiveWeather()}>실시간 날씨</button></div><p>{gpsStatus}</p><p><b>현재 위치:</b> {location?location.lat.toFixed(5)+", "+location.lng.toFixed(5):"미확인"}</p><p><b>그린 좌표:</b> {target?target.lat.toFixed(5)+", "+target.lng.toFixed(5):"미등록"}</p><p><b>잔여거리:</b> {gpsRemain!=null?gpsRemain+"m":"그린 좌표 등록 시 GPS 계산"}</p></div>}
-        {panelTab==="memo"&&<div className="detailPanel"><h4>메모/사진</h4><textarea placeholder={courseName+" "+hole.hole+"H 메모"}/><input type="file" accept="image/*"/></div>}
+        {panelTab==="memo"&&<div className="detailPanel"><h4>메모/사진</h4><textarea placeholder={courseName+" "+hole.hole+"H 메모"}/><input aria-label={courseName+" 사진 선택"} type="file" accept="image/*" onChange={e=>{const file=e.target.files?.[0];if(file){if(photo)URL.revokeObjectURL(photo);setPhoto(URL.createObjectURL(file))}}}/>{photo&&<img className="memoPreview" src={photo} alt={courseName+" 선택 사진 미리보기"}/>}</div>}
         {panelTab==="score"&&<div className="detailPanel"><h4>스코어 기록</h4><div className="scoreInputs"><label>타수<input aria-label={courseName+" 타수"} type="number" value={score.strokes} onChange={e=>setScore("strokes",e.target.value)}/></label><label>퍼트<input type="number" value={score.putts} onChange={e=>setScore("putts",e.target.value)}/></label><label>벌타<input type="number" value={score.penalty} onChange={e=>setScore("penalty",e.target.value)}/></label></div><h4>샷 기록</h4><div className="shotQuick"><select value={shotClub} onChange={e=>setShotClub(e.target.value)}>{Object.keys(clubs).map(c=><option key={c}>{c}</option>)}</select><input aria-label={courseName+" 샷 거리"} type="number" value={shotDist} onChange={e=>setShotDist(e.target.value)} placeholder="거리"/><select value={miss} onChange={e=>setMiss(e.target.value)}>{MISSES.map(m=><option key={m}>{m}</option>)}</select><button onClick={()=>{addShot({club:shotClub,distance:Number(shotDist)||0,miss,at:new Date().toISOString()});setShotDist("")}}>추가</button></div><div className="shotRows">{shots.map((s,i)=><div key={s.id}><span>{i+1}타 {s.club} · {s.distance||"-"}m · {s.miss}</span><button onClick={()=>deleteShot(s.id)}>삭제</button></div>)}</div></div>}
       </div>
     </div>
     <div className="clubRecommend"><div className="clock">◷</div><div><b>AI 추천 클럽 (내 구질 반영)</b><div className="recGrid"><span><small>티샷</small><strong>{hole.par===3?nearestClub(clubs,hole.distance):"드라이버"} ({hole.par===3?clubs[nearestClub(clubs,hole.distance)]:driver}m)</strong></span><span><small>세컨드 (예상 {remain}m)</small><strong>{second} ({clubs[second]||"-"}m)</strong></span><span><small>어프로치</small><strong>{approach} ({clubs[approach]||"-"}m)</strong></span></div></div></div>
-    <div className="panelActions"><button className="scoreBtn" onClick={onScore}>이 홀로 스코어 기록하기</button><button className="nextBtn" onClick={onNext}>다음 홀 ({Math.min(9,holeIndex+2)}H) →</button></div>
+    <div className="panelActions"><button className="scoreBtn" onClick={onScore}>이 홀로 스코어 기록하기</button><button className="nextBtn" onClick={onNext}>{holeIndex===8?"이 코스 완료":"다음 홀 ("+(holeIndex+2)+"H) →"}</button></div>
+    {fullMap&&<div className="mapModal" onClick={()=>setFullMap(false)}><div className="mapModalInner" onClick={e=>e.stopPropagation()}><div className="modalHead"><h3>{courseName.toUpperCase()} {hole.hole}H 전체보기</h3><button aria-label="지도 닫기" onClick={()=>setFullMap(false)}>✕</button></div><VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver}/></div></div>}
   </article>
 }
 

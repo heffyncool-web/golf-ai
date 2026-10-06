@@ -15,8 +15,8 @@ test("approved dashboard desktop geometry and screenshot", async ({ page }, test
   const a = await boards.nth(0).boundingBox();
   const b = await boards.nth(1).boundingBox();
   expect(Math.abs(side.width - 124)).toBeLessThanOrEqual(3);
-  expect(top.height).toBeGreaterThanOrEqual(56);
-  expect(top.height).toBeLessThanOrEqual(82);
+  expect(top.height).toBeGreaterThanOrEqual(50);
+  expect(top.height).toBeLessThanOrEqual(65);
   expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(3);
   expect(Math.abs(a.width - b.width)).toBeLessThan(30);
   expect(a.width).toBeGreaterThan(380);
@@ -147,4 +147,28 @@ test("mobile layout keeps controls clickable without horizontal overflow", async
   await expect(page.locator(".coursePanel").first().getByText("AI 공략 가이드")).toBeVisible();
   const shot=await page.screenshot({fullPage:true});
   await testInfo.attach("approved-dashboard-mobile",{body:shot,contentType:"image/png"});
+});
+
+
+test("hole full-view toggle opens a real satellite map modal and closes", async ({ page }) => {
+  await page.setViewportSize({ width: 977, height: 740 });
+  await page.reload();
+  const first=page.locator(".coursePanel").first();
+  const toggle=first.getByLabel("Lake 홀 전체보기");
+  await toggle.check();
+  await expect(page.locator(".mapModal")).toBeVisible();
+  await expect(page.locator(".mapModal .satelliteMap")).toBeVisible();
+  await page.getByRole("button",{name:"지도 닫기"}).click();
+  await expect(page.locator(".mapModal")).toHaveCount(0);
+});
+
+test("desktop reference viewport keeps Lake and Mountain side by side", async ({ page }) => {
+  await page.setViewportSize({width:977,height:740});
+  await page.reload();
+  const boards=page.locator(".coursePanel");
+  const a=await boards.nth(0).boundingBox(), b=await boards.nth(1).boundingBox();
+  expect(Math.abs(a.y-b.y)).toBeLessThanOrEqual(3);
+  expect(a.x).toBeLessThan(b.x);
+  expect(a.width).toBeGreaterThan(390);
+  expect(b.width).toBeGreaterThan(390);
 });
