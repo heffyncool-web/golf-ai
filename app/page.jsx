@@ -276,7 +276,7 @@ function CoursePanel({courseName,courseIndex,courseCenter,hole,holeIndex,panelTa
   return <article className={"coursePanel "+color}>
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{dailyTeeToGreen!=null?dailyTeeToGreen:hole.distance}m{dailyTeeToGreen!=null?" · 오늘 티박스":""}</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
-      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} location={location} target={target} points={displayPoints} shots={shots} areas={displayAreas} courseCenter={courseCenter}/>
+      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} location={location} target={target} points={displayPoints} shots={shots} areas={displayAreas} courseCenter={courseCenter} hasDownloadedCourse={Boolean(downloadedCourse)}/>
       <div className="holeDetails">
         <div className="innerTabs">
           <button className={panelTab==="info"?"on":""} onClick={()=>setPanelTab("info")}>홀 정보</button>
