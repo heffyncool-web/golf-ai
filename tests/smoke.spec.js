@@ -319,3 +319,13 @@ test("address result links into personal alignment learning", async ({ page }) =
  await expect(first.getByText(/표본 3개/)).toBeVisible();
  await expect(first.getByText(/우측 미스가 100%/)).toBeVisible();
 });
+
+
+test("pre-shot warning is scoped by club and distance and creates drill", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
+ await first.getByLabel("어드레스 클럽").selectOption("7I");
+ await first.getByLabel("어드레스 목표거리").fill("140");
+ await expect(first.getByText("7I 정렬 리셋 10구")).toBeVisible();
+ await expect(first.getByText(/표본 8개 확보|기존 미스 비율보다 20% 이상 감소/)).toBeVisible();
+});
