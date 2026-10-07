@@ -454,3 +454,12 @@ test("course field screen exposes learned risk mission", async ({ page }) => {
  const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();
  await expect(first.getByText("코스 위험 학습 미션")).toBeVisible();
 });
+
+
+test("distance panel exposes field geometry verification", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button",{name:"거리 측정"}).first().click();
+  await expect(page.getByText(/이 홀 실측 검증/).first()).toBeVisible();
+  await expect(page.getByRole("button",{name:"티잉구역 저장"}).first()).toBeVisible();
+  await expect(page.getByText(/공개 코스맵은 참고자료/).first()).toBeVisible();
+});
