@@ -223,3 +223,14 @@ test("personal club carry dispersion and success persist and affect strategy UI"
   await first.getByRole("button",{name:"공략 가이드"}).click();
   await expect(first.getByText(/유효 캐리|개인 분산/).first()).toBeVisible();
 });
+
+
+test("Golfzon pasted shots auto-learn personal club profile", async ({ page }) => {
+ await page.reload(); await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
+ const box=page.getByLabel("Golfzon 데이터 붙여넣기");
+ await box.fill("7I,142,134,6,정타\n7I,138,131,-8,좌\n7I,145,136,4,정타\n7I,141,133,5,정타");
+ await page.getByRole("button",{name:"가져오기·학습"}).click();
+ await expect(page.getByText(/4개 샷을 가져와 자동 학습했습니다/)).toBeVisible();
+ await expect(page.locator(".card").filter({hasText:"7I · 4샷"})).toBeVisible();
+ await expect(page.getByLabel("7I 캐리")).toHaveValue("134");
+});
