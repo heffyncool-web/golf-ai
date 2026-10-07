@@ -29,6 +29,8 @@ function advice(distance,lie,club){
   return {club:usePW?"PW":club,title:usePW?"굴릴 수 있으면 굴리는 쉬운 공략":"캐리와 런을 분리해 거리 조절",setup:usePW?"퍼팅과 비슷하게 좁은 스탠스, 체중은 왼쪽, 손목 사용을 줄입니다.":"좁은 스탠스에서 일정한 템포로 스윙 크기를 조절합니다.",feel:usePW?`${distance}m라면 약 ${Math.max(2,Math.round(distance*.5))}m 캐리 후 굴린다는 느낌부터 시작하세요.`:`${distance}m 캐리 목표점을 먼저 정하고 스윙 크기를 기록하세요.`,target:"홀보다 착지점 먼저 보기",avoid:"거리만 보고 무조건 56°를 선택하지 말고 앞 장애물과 굴릴 공간을 확인하세요."};
 }
 
+export function getShortGameAdvice(distance,lie,club="56°"){ return advice(Number(distance),lie,club); }
+
 export default function ShortGameAcademy(){
   const [distance,setDistance]=useState(10),[lie,setLie]=useState("fairway"),[club,setClub]=useState("56°");
   const [tab,setTab]=useState("situation"),[records,setRecords]=useState([]);
