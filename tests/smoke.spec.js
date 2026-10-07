@@ -189,3 +189,19 @@ test("short game academy and live caddie share trouble-shot guidance", async ({ 
   await first.getByLabel("트러블 남은 거리").selectOption("10");
   await expect(first.getByText(/추천 56°/)).toBeVisible();
 });
+
+
+test("AI guide compares carry clearance downstream risk and layup", async ({ page }) => {
+  await page.reload();
+  const first=page.locator(".coursePanel").first();
+  await first.getByRole("button",{name:"공략 가이드"}).click();
+  await first.getByLabel("장애물 앞 거리").fill("150");
+  await first.getByLabel("장애물 폭").fill("15");
+  await first.getByLabel("장애물 뒤 위험").selectOption("내리막+OB");
+  await expect(first.getByText(/최소 캐리:/)).toContainText("165m");
+  await expect(first.getByText(/안전 캐리:/)).toContainText("172m");
+  await expect(first.getByText("SAFE",{exact:true})).toBeVisible();
+  await expect(first.getByText("STANDARD",{exact:true})).toBeVisible();
+  await expect(first.getByText("AGGRESSIVE",{exact:true})).toBeVisible();
+  await expect(first.getByText("더 쉬운 대안")).toBeVisible();
+});
