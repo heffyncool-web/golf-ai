@@ -329,3 +329,16 @@ test("pre-shot warning is scoped by club and distance and creates drill", async 
  await expect(first.getByText("7I 정렬 리셋 10구")).toBeVisible();
  await expect(first.getByText(/표본 8개 확보|기존 미스 비율보다 20% 이상 감소/)).toBeVisible();
 });
+
+
+test("alignment sessions survive reload and spoken pre-shot coach is available", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
+ await first.getByLabel("어드레스 클럽").selectOption("7I");
+ await first.getByLabel("어드레스 목표거리").fill("140");
+ await first.getByRole("button",{name:"어드레스 세션 저장"}).click();
+ await expect(first.getByRole("button",{name:"개인 경고 음성 듣기"})).toBeVisible();
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const again=page.locator(".coursePanel").first();await again.getByRole("button",{name:"트러블/어프로치"}).click();
+ await expect(again.getByText(/7I · 140m ·/).first()).toBeVisible();
+});
