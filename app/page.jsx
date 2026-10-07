@@ -5,7 +5,7 @@ import { builtInCourses, getCourseById } from "../data/courses";
 import { SATELLITE_MAPS } from "../data/satelliteMaps";
 import { GRACE_REFERENCE_SOURCES, graceReferenceStatus } from "../data/courseReferences";
 import ShortGameAcademy, { getShortGameAdvice } from "./ShortGameAcademy";
-import { strategyOptions, defaultClubStats } from "./strategyEngine";
+import { strategyOptions, defaultClubStats, verifiedCoursePlan } from "./strategyEngine";
 import { learnClubStats, parseGolfzonText, parseGolfzonFile } from "./learningEngine";
 import { shortGameMatrix, weaknessMissions, labelLie, personalShortGameChoice } from "./practiceEngine";
 import { alignmentGrade, alignmentLesson } from "./alignmentEngine";
@@ -245,6 +245,7 @@ function CoursePanel({courseName,courseIndex,courseCenter,hole,holeIndex,panelTa
   const [hazardFront,setHazardFront]=useState(150),[hazardWidth,setHazardWidth]=useState(15),[afterRisk,setAfterRisk]=useState("none"),[elevationDelta,setElevationDelta]=useState(0);
   const eff=effectiveDistance({distance:remain,elevationDelta,wind:weather.wind,relation}),strategy=strategyOptions({clubs,clubStats,remaining:eff.effective,hazard:{front:hazardFront,width:hazardWidth},downstreamRisk:afterRisk,missBias:profile.bias});
   const currentRisk=location?positionRisk(location,courseAreas):"미분류",riskMission=riskMissionFromAreas(shots,courseAreas),chosen=strategy.standard,targetShift=targetBias({missBias:profile.bias,dispersion:chosen?.dispersion||0,riskLeft:/좌/.test(afterRisk),riskRight:/우/.test(afterRisk)});
+  const coursePlan=verifiedCoursePlan({hole,remaining:remain,points:greenPoints,areas:courseAreas,location});
   const personalChoice=personalShortGameChoice(shortMatrix,shortDistance,trouble);
   const shortAdvice=getShortGameAdvice(shortDistance,trouble,personalChoice?.best?.club||"56°");
   useEffect(()=>{if(voiceAuto&&panelTab==="trouble"){const id=setTimeout(()=>speakAdvice(),250);return()=>clearTimeout(id)}},[voiceAuto,shortDistance,trouble,personalChoice?.best?.club]);
@@ -281,7 +282,7 @@ function CoursePanel({courseName,courseIndex,courseCenter,hole,holeIndex,panelTa
         </>}
 
         {panelTab==="guide"&&<div className="detailPanel"><h4>AI 공략 가이드</h4><p><b>1.</b> 티샷 목표는 {profile.bias}. 좌 미스 {profile.left}, 우 미스 {profile.right} 기록을 반영합니다.</p><p><b>2.</b> 남은거리 {remain}m에서 추천 클럽은 {second}입니다.</p><p><b>3.</b> 현재 바람: {compass(weather.windDeg)} {weather.wind}m/s · {relation}</p><p><b>4.</b> 위험요소: {(hole.hazards||[]).join(", ")||"세부 위험 확인"}</p>
-          <hr/><h4>캐리 · 착지 위험 계산</h4>
+          <div className={"strategyBox confidenceBox "+coursePlan.confidence}><h4><span>◎</span> {coursePlan.headline}</h4><p><b>지형 신뢰도 {coursePlan.confidence}</b> · 검증 지형 {coursePlan.geometryScore}/6</p><p>{coursePlan.note}</p>{coursePlan.warnings.length>0&&<div className="chips">{coursePlan.warnings.map(x=><span key={x}>{x}</span>)}</div>}</div><hr/><h4>캐리 · 착지 위험 계산</h4>
           <div className="scoreInputs"><label>고저차(m)<input aria-label="목표 고저차" type="number" value={elevationDelta} onChange={e=>setElevationDelta(Number(e.target.value)||0)}/></label><label>장애물 앞까지(m)<input aria-label="장애물 앞 거리" type="number" value={hazardFront} onChange={e=>setHazardFront(Number(e.target.value)||0)}/></label><label>장애물 폭(m)<input aria-label="장애물 폭" type="number" value={hazardWidth} onChange={e=>setHazardWidth(Number(e.target.value)||0)}/></label><label>넘긴 뒤 위험<select aria-label="장애물 뒤 위험" value={afterRisk} onChange={e=>setAfterRisk(e.target.value)}><option value="none">없음</option><option value="내리막+OB">내리막 + OB</option><option value="물">물</option><option value="벙커">벙커</option><option value="좁은 페어웨이">좁은 페어웨이</option><option value="깊은 러프">깊은 러프</option></select></label></div>
           <p><b>실거리:</b> {eff.raw}m → 경사 {eff.slope}m → <b>바람 포함 유효거리 {eff.effective}m</b></p><p><b>최소 캐리:</b> {strategy.minimumCarry}m · <b>안전 캐리:</b> {strategy.safeCarry}m</p><p><b>추천 목표 보정:</b> {targetShift.text}</p>
           <div className="cards strategyCards">{[strategy.safe,strategy.standard,strategy.aggressive].map(x=><div className="card" key={x.mode}><small>{x.mode}</small><b>{x.club} · 캐리 {x.carry}m</b><span>예상 총거리 {x.total}m · 위험점수 {x.risk}</span><span>{x.text}</span></div>)}</div>
