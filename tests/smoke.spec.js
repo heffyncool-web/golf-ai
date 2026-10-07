@@ -411,3 +411,19 @@ test("camera coach exposes zero degree calibration", async ({ page }) => {
  const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
  await expect(first.getByRole("button",{name:"카메라 정렬 기준 보정"})).toBeVisible();
 });
+
+
+test("course map switches between satellite and street and exports field GPS", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();
+ await expect(first.getByRole("button",{name:"위성지도 보기"})).toBeVisible();
+ await expect(first.getByRole("button",{name:"일반지도 보기"})).toBeVisible();
+ await expect(first.getByRole("button",{name:"코스 GPS GeoJSON 내보내기"})).toBeVisible();
+});
+
+test("short game media tab can play current Korean lesson and build storyboard", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"상황별 공략·어프로치",exact:true}).click();
+ await page.getByRole("button",{name:"MP3 · MP4 레슨"}).click();
+ await expect(page.getByRole("button",{name:"현재 레슨 음성 재생"})).toBeVisible();
+ await expect(page.getByText("MP4 제작 스토리보드")).toBeVisible();
+});
