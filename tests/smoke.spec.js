@@ -427,3 +427,15 @@ test("short game media tab can play current Korean lesson and build storyboard",
  await expect(page.getByRole("button",{name:"현재 레슨 음성 재생"})).toBeVisible();
  await expect(page.getByText("MP4 제작 스토리보드")).toBeVisible();
 });
+
+
+test("field course boundary capture supports fairway green bunker water and OB", async ({ page, context }) => {
+ await context.grantPermissions(["geolocation"]);await context.setGeolocation({latitude:35.647,longitude:128.735});
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();await first.getByRole("button",{name:"GPS 현재위치"}).click();
+ await expect(first.getByLabel("코스 영역 종류")).toBeVisible();
+ await first.getByLabel("코스 영역 종류").selectOption("green");
+ await first.getByRole("button",{name:"현재 위치를 코스 경계점으로 추가"}).click();
+ await expect(first.getByText(/그린 1점/)).toBeVisible();
+ await expect(first.getByRole("button",{name:"코스 경계 초기화"})).toBeVisible();
+});
