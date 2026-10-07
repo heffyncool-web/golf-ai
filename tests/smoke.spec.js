@@ -252,3 +252,11 @@ test("adaptive practice loop creates baseline mission and relearns shot by shot"
  await expect(page.locator(".card").filter({hasText:/PW 10m · 보통 잔디/})).toContainText("3구");
  await expect(page.locator(".card").filter({hasText:/PW 10m · 보통 잔디/})).toContainText("성공률 100%");
 });
+
+
+test("live caddie falls back safely when personal short-game sample is insufficient", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
+ await first.getByLabel("트러블 남은 거리").selectOption("10");await first.getByLabel("트러블 라이").selectOption("fairway");
+ await expect(first.getByText(/개인 표본이 3구 미만|내 성공률 기반 추천/)).toBeVisible();
+});
