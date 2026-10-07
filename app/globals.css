@@ -67,3 +67,5 @@
 .referenceBox{border-color:#b9d6ee;background:#f5fbff}.referenceLinks{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0}.referenceLinks a{font-size:9px;text-decoration:none;border:1px solid #9dc7e8;background:#fff;color:#075aac;border-radius:999px;padding:3px 6px}.referenceBox small{display:block;color:#5c6f7b}
 
 .confidenceBox{border-left:4px solid #d69a13}.confidenceBox.높음{border-left-color:#168a57;background:#f1fbf6}.confidenceBox.중간{border-left-color:#2e78bd;background:#f3f8fd}.confidenceBox.기초{border-left-color:#d69a13;background:#fff9ed}
+
+.dailyTeeBox{border-color:#d8b34a;background:#fffaf0}.dailyTeeBox b{color:#8b5a00}
