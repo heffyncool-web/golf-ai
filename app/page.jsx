@@ -9,14 +9,14 @@ import { learnClubStats, parseGolfzonText, parseGolfzonFile } from "./learningEn
 import { shortGameMatrix, weaknessMissions, labelLie, personalShortGameChoice } from "./practiceEngine";
 import { alignmentGrade, alignmentLesson } from "./alignmentEngine";
 import CameraAlignmentCoach from "./CameraAlignmentCoach";
-import {shotPathSummary} from "./roundReview";
+import {shotPathSummary,roundReview} from "./roundReview";
 
 const NAV=[
   ["home","⌂","홈"],["schedule","▣","라운드 일정"],["caddie","♟","AI 캐디"],["score","▤","스코어카드"],
   ["courses","♙","골프장 DB"],["swing","♧","스윙 분석"],["shortgame","◎","상황별 공략·어프로치"],["practice","⚯","연습/코칭"],["equipment","⌕","장비/클럽"],
   ["weather","☀","날씨/바람"],["settings","⚙","설정"]
 ];
-const DEFAULT_CLUBS={Driver:220,"3W":200,"5W":180,Utility:170,"5I":160,"6I":150,"7I":140,"8I":130,"9I":120,PW:105,AW:90,SW:80};
+const DEFAULT_CLUBS={Driver:220,"3W":200,"5W":180,Utility:170,"5I":160,"6I":150,"7I":140,"8I":130,"9I":120,PW:105,AW:90,"56°":80};
 const MISSES=["정타","좌","우","짧음","김","OB","해저드","벙커"];
 const RELATIONS=["자동","앞바람","뒷바람","좌→우","우→좌"];
 
@@ -114,11 +114,11 @@ export default function Page(){
   }
   function updateCustomHole(courseName,index,patch){setCustomCourses(p=>p.map(c=>c.id!==courseId?c:{...c,courses:{...c.courses,[courseName]:c.courses[courseName].map((h,i)=>i===index?{...h,...patch}:h)}}))}
   function exportData(){
-    const blob=new Blob([JSON.stringify({customCourses,clubs,scores,shots,round,weather},null,2)],{type:"application/json"});
+    const blob=new Blob([JSON.stringify({version:4,exportedAt:new Date().toISOString(),customCourses,clubs,clubStats,scores,shots,round,weather,practice},null,2)],{type:"application/json"});
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="golf-ai-data.json";a.click();URL.revokeObjectURL(a.href);
   }
   function importData(file){
-    const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.customCourses)setCustomCourses(d.customCourses);if(d.clubs)setClubs(d.clubs);if(d.scores)setScores(d.scores);if(d.shots)setShots(d.shots);if(d.round)setRound(d.round);if(d.weather)setWeather(d.weather)}catch{alert("JSON 파일을 확인해 주세요.")}};r.readAsText(file);
+    const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.customCourses)setCustomCourses(d.customCourses);if(d.clubs)setClubs(d.clubs);if(d.clubStats)setClubStats(d.clubStats);if(d.scores)setScores(d.scores);if(d.shots)setShots(d.shots);if(d.round)setRound(d.round);if(d.weather)setWeather(d.weather);if(d.practice)setPractice(d.practice)}catch{alert("JSON 파일을 확인해 주세요.")}};r.readAsText(file);
   }
 
   return <div className="shell">
@@ -316,7 +316,7 @@ function StrategyBox({title,icon,children}){return <div className="strategyBox">
 function Home({round,course,totalScore,profile,setView}){return <div className="panel"><h2>라운드 대시보드</h2><div className="cards"><Card t="다음 라운드" v={round.date+" "+round.time}/><Card t="골프장" v={course.name}/><Card t="현재 스코어" v={totalScore||"-"}/><Card t="기록 샷" v={profile.total+"개"}/><Card t="좌/우 미스" v={profile.left+" / "+profile.right}/><Card t="AI 목표" v={profile.bias}/></div><button className="primary" onClick={()=>setView("caddie")}>AI 캐디 시작</button></div>}
 function Card({t,v}){return <div className="card"><small>{t}</small><b>{v}</b></div>}
 function Schedule({round,setRound}){return <div className="panel"><h2>라운드 일정</h2><div className="formgrid">{Object.entries({date:"날짜",time:"티타임",players:"인원",fee:"그린피",caddie:"캐디"}).map(([k,l])=><label key={k}>{l}<input aria-label={l} value={round[k]} type={k==="date"?"date":k==="time"?"time":k==="players"||k==="fee"?"number":"text"} onChange={e=>setRound({...round,[k]:e.target.value})}/></label>)}</div><p className="ok">입력값은 자동 저장됩니다.</p></div>}
-function Score({scores,setScoreField,shots}){const total=scores.reduce((n,s)=>n+(Number(s.strokes)||0),0);return <div className="panel"><h2>18홀 스코어카드</h2><div className="scoregrid">{scores.map((s,i)=><div className="scorecell" key={i}><b>{i+1}H <small>{shots[i]?.length||0}샷</small></b><input type="number" placeholder="타수" value={s.strokes} onChange={e=>setScoreField(i,"strokes",e.target.value)}/><input type="number" placeholder="퍼트" value={s.putts} onChange={e=>setScoreField(i,"putts",e.target.value)}/><input type="number" placeholder="벌타" value={s.penalty} onChange={e=>setScoreField(i,"penalty",e.target.value)}/></div>)}</div><h3>합계 {total||"-"}</h3></div>}
+function Score({scores,setScoreField,shots}){const total=scores.reduce((n,s)=>n+(Number(s.strokes)||0),0),review=roundReview(shots),putts=scores.reduce((n,x)=>n+(Number(x.putts)||0),0),penalties=scores.reduce((n,x)=>n+(Number(x.penalty)||0),0);return <div className="panel"><h2>18홀 스코어카드</h2><div className="cards"><Card t="총 샷 기록" v={review.shots}/><Card t="GPS 기록률" v={review.gpsRate+"%"}/><Card t="OB / 해저드" v={review.ob+" / "+review.hazard}/><Card t="퍼트 / 벌타" v={putts+" / "+penalties}/></div>{review.shots>0&&<div className="strategyBox"><h4><span>↺</span> 라운드 자동 복기</h4><p>{review.ob+review.hazard>=3?"OB·해저드가 반복됐습니다. 다음 연습은 최대거리보다 티샷 방향성과 안전 목표를 우선하세요.":review.gpsRate<70?"GPS 샷 기록률을 70% 이상으로 올리면 홀별 미스 위치 학습이 더 정확해집니다.":"위험구역 손실이 비교적 적습니다. 다음 단계는 퍼트와 어프로치 성공률을 함께 비교하세요."}</p></div>}<div className="scoregrid">{scores.map((s,i)=><div className="scorecell" key={i}><b>{i+1}H <small>{shots[i]?.length||0}샷</small></b><input type="number" placeholder="타수" value={s.strokes} onChange={e=>setScoreField(i,"strokes",e.target.value)}/><input type="number" placeholder="퍼트" value={s.putts} onChange={e=>setScoreField(i,"putts",e.target.value)}/><input type="number" placeholder="벌타" value={s.penalty} onChange={e=>setScoreField(i,"penalty",e.target.value)}/></div>)}</div><h3>합계 {total||"-"}</h3></div>}
 function Courses({allCourses,customCourses,addCourse,setCustomCourses,courseId,setCourseId,course,rotation,updateCustomHole,setStep}){
   const [q,setQ]=useState(""),[courseName,setCourseName]=useState(rotation[0]||""),[holeNo,setHoleNo]=useState(1);
   useEffect(()=>{setCourseName(rotation[0]||"");setHoleNo(1)},[courseId]);
