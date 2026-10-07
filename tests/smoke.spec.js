@@ -482,3 +482,12 @@ test("daily moved tee box can override nominal tee without changing master tee",
  await expect(first.getByRole("button",{name:"오늘 티박스 위치 해제"})).toBeDisabled();
  await expect(first.getByText(/기준 티 좌표와 별도로 저장/)).toBeVisible();
 });
+
+test("download-first course mode is available before field GPS", async ({ page }) => {
+ await page.reload();
+ const first=page.locator(".coursePanel").first();
+ await first.getByRole("button",{name:"거리 측정"}).click();
+ await expect(first.getByText(/1단계 · 코스 데이터 먼저 불러오기/)).toBeVisible();
+ await expect(first.getByLabel("코스 데이터 파일")).toBeVisible();
+ await expect(first.getByText(/2단계 · 현장 GPS 보정/)).toBeVisible();
+});
