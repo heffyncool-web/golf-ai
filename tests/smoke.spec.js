@@ -472,3 +472,13 @@ test("strategy confidence starts conservatively until field geometry is verified
  await expect(first.getByText(/보수적 공략/)).toBeVisible();
  await expect(first.getByText(/그린 GPS 미검증/)).toBeVisible();
 });
+
+test("daily moved tee box can override nominal tee without changing master tee", async ({ page }) => {
+ await page.reload();
+ const first=page.locator(".coursePanel").first();
+ await first.getByRole("button",{name:"거리 측정"}).click();
+ await expect(first.getByText("오늘 티박스 위치")).toBeVisible();
+ await expect(first.getByRole("button",{name:"오늘 티박스 현재 GPS 적용"})).toBeVisible();
+ await expect(first.getByRole("button",{name:"오늘 티박스 위치 해제"})).toBeDisabled();
+ await expect(first.getByText(/기준 티 좌표와 별도로 저장/)).toBeVisible();
+});
