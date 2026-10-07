@@ -304,3 +304,18 @@ test("address session saves club target lie and alignment score", async ({ page 
  await expect(first.getByText(/7I · 140m ·/)).toBeVisible();
  await expect(first.getByText(/정렬 양호/).last()).toBeVisible();
 });
+
+
+test("address result links into personal alignment learning", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
+ await first.getByLabel("어깨선 각도").fill("6");
+ for(let i=0;i<3;i++){
+  await first.getByRole("button",{name:"어드레스 세션 저장"}).click();
+  await first.getByLabel("어드레스 샷 결과").selectOption("우");
+  await first.getByLabel("어드레스 좌우 편차").fill("8");
+  await first.getByRole("button",{name:"샷 결과 연결"}).click();
+ }
+ await expect(first.getByText(/표본 3개/)).toBeVisible();
+ await expect(first.getByText(/우측 미스가 100%/)).toBeVisible();
+});
