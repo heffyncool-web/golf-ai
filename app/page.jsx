@@ -9,7 +9,11 @@ import { learnClubStats, parseGolfzonText, parseGolfzonFile } from "./learningEn
 import { shortGameMatrix, weaknessMissions, labelLie, personalShortGameChoice } from "./practiceEngine";
 import { alignmentGrade, alignmentLesson } from "./alignmentEngine";
 import CameraAlignmentCoach from "./CameraAlignmentCoach";
-import {shotPathSummary,roundReview} from "./roundReview";\nimport LiveCourseMap from "./LiveCourseMap";\nimport {emptyCourseAreas,addAreaPoint,positionRisk} from "./courseAreas";\nimport {effectiveDistance,targetBias} from "./ballistics";\nimport {riskMissionFromAreas} from "./courseLearning";
+import {shotPathSummary,roundReview} from "./roundReview";
+import LiveCourseMap from "./LiveCourseMap";
+import {emptyCourseAreas,addAreaPoint,positionRisk} from "./courseAreas";
+import {effectiveDistance,targetBias} from "./ballistics";
+import {riskMissionFromAreas} from "./courseLearning";
 
 const NAV=[
   ["home","⌂","홈"],["schedule","▣","라운드 일정"],["caddie","♟","AI 캐디"],["score","▤","스코어카드"],
