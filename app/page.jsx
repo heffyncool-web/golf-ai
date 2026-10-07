@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { builtInCourses, getCourseById } from "../data/courses";
 import { SATELLITE_MAPS } from "../data/satelliteMaps";
 import ShortGameAcademy, { getShortGameAdvice } from "./ShortGameAcademy";
+import { strategyOptions } from "./strategyEngine";
 
 const NAV=[
   ["home","⌂","홈"],["schedule","▣","라운드 일정"],["caddie","♟","AI 캐디"],["score","▤","스코어카드"],
@@ -206,6 +207,8 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   const approach=nearestClub(clubs,Math.min(100,Math.max(35,Math.round(remain*.35))));
   const [shotClub,setShotClub]=useState("Driver"),[shotDist,setShotDist]=useState(""),[miss,setMiss]=useState("정타"),[fullMap,setFullMap]=useState(false),[photo,setPhoto]=useState("");
   const [trouble,setTrouble]=useState("fairway"),[shortDistance,setShortDistance]=useState(20);
+  const [hazardFront,setHazardFront]=useState(150),[hazardWidth,setHazardWidth]=useState(15),[afterRisk,setAfterRisk]=useState("none");
+  const strategy=strategyOptions({clubs,remaining:remain,hazard:{front:hazardFront,width:hazardWidth},downstreamRisk:afterRisk,missBias:profile.bias});
   const shortAdvice=getShortGameAdvice(shortDistance,trouble,"56°");
   const color=courseIndex===0?"blue":"orange";
   return <article className={"coursePanel "+color}>
@@ -230,7 +233,13 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
           <StrategyBox title="그린 공략" icon="⚑"><p>핀보다 그린 중앙을 기본 목표로 하고 당일 경사와 핀 위치를 최종 확인합니다.</p></StrategyBox>
         </>}
 
-        {panelTab==="guide"&&<div className="detailPanel"><h4>AI 공략 가이드</h4><p><b>1.</b> 티샷 목표는 {profile.bias}. 좌 미스 {profile.left}, 우 미스 {profile.right} 기록을 반영합니다.</p><p><b>2.</b> 남은거리 {remain}m에서 추천 클럽은 {second}입니다.</p><p><b>3.</b> 현재 바람: {compass(weather.windDeg)} {weather.wind}m/s · {relation}</p><p><b>4.</b> 위험요소: {(hole.hazards||[]).join(", ")||"세부 위험 확인"}</p></div>}
+        {panelTab==="guide"&&<div className="detailPanel"><h4>AI 공략 가이드</h4><p><b>1.</b> 티샷 목표는 {profile.bias}. 좌 미스 {profile.left}, 우 미스 {profile.right} 기록을 반영합니다.</p><p><b>2.</b> 남은거리 {remain}m에서 추천 클럽은 {second}입니다.</p><p><b>3.</b> 현재 바람: {compass(weather.windDeg)} {weather.wind}m/s · {relation}</p><p><b>4.</b> 위험요소: {(hole.hazards||[]).join(", ")||"세부 위험 확인"}</p>
+          <hr/><h4>캐리 · 착지 위험 계산</h4>
+          <div className="scoreInputs"><label>장애물 앞까지(m)<input aria-label="장애물 앞 거리" type="number" value={hazardFront} onChange={e=>setHazardFront(Number(e.target.value)||0)}/></label><label>장애물 폭(m)<input aria-label="장애물 폭" type="number" value={hazardWidth} onChange={e=>setHazardWidth(Number(e.target.value)||0)}/></label><label>넘긴 뒤 위험<select aria-label="장애물 뒤 위험" value={afterRisk} onChange={e=>setAfterRisk(e.target.value)}><option value="none">없음</option><option value="내리막+OB">내리막 + OB</option><option value="물">물</option><option value="벙커">벙커</option><option value="좁은 페어웨이">좁은 페어웨이</option><option value="깊은 러프">깊은 러프</option></select></label></div>
+          <p><b>최소 캐리:</b> {strategy.minimumCarry}m · <b>안전 캐리:</b> {strategy.safeCarry}m</p>
+          <div className="cards strategyCards">{[strategy.safe,strategy.standard,strategy.aggressive].map(x=><div className="card" key={x.mode}><small>{x.mode}</small><b>{x.club} · 캐리 {x.carry}m</b><span>예상 총거리 {x.total}m · 위험점수 {x.risk}</span><span>{x.text}</span></div>)}</div>
+          {strategy.layup&&<div className="strategyBox"><h4><span>↘</span> 더 쉬운 대안</h4><p><b>{strategy.layup.club}</b> · {strategy.layup.text}</p></div>}
+        </div>}
         {panelTab==="distance"&&<div className="detailPanel"><h4>거리 측정</h4><div className="liveBtns"><button onClick={()=>requestLocation()}>GPS 현재위치</button><button onClick={()=>fetchLiveWeather()}>실시간 날씨</button></div><p>{gpsStatus}</p><p><b>현재 위치:</b> {location?location.lat.toFixed(5)+", "+location.lng.toFixed(5):"미확인"}</p><p><b>그린 좌표:</b> {target?target.lat.toFixed(5)+", "+target.lng.toFixed(5):"미등록"}</p><p><b>잔여거리:</b> {gpsRemain!=null?gpsRemain+"m":"그린 좌표 등록 시 GPS 계산"}</p></div>}
         {panelTab==="memo"&&<div className="detailPanel"><h4>메모/사진</h4><textarea placeholder={courseName+" "+hole.hole+"H 메모"}/><input aria-label={courseName+" 사진 선택"} type="file" accept="image/*" onChange={e=>{const file=e.target.files?.[0];if(file){if(photo)URL.revokeObjectURL(photo);setPhoto(URL.createObjectURL(file))}}}/>{photo&&<img className="memoPreview" src={photo} alt={courseName+" 선택 사진 미리보기"}/>}</div>}
         {panelTab==="trouble"&&<div className="detailPanel"><h4>상황별 쉬운 공략</h4>
