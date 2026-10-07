@@ -7,3 +7,26 @@ export function strategyOptions({clubs,clubStats={},remaining,hazard=null,downst
  const explain=(c,mode)=>({mode,club:c?.name||"-",carry:c?.carry||0,total:c?.total||0,dispersion:c?.dispersion||0,success:c?.success||0,reliableCarry:c?.reliableCarry??c?.carry??0,risk:c?.risk??99,text:c?.overrun?`장애물은 넘지만 이후 ${downstreamRisk} 위험이 있어 직접 공략보다 레이업을 우선 검토합니다.`:c?.clears?`개인 캐리·분산을 반영한 유효 캐리 ${c.reliableCarry}m가 안전 캐리 ${safeCarry||"-"}m 기준을 충족합니다. ${missBias} 방향의 넓은 착지면을 우선합니다.`:`개인 분산을 반영하면 안전 캐리 ${safeCarry}m 확보 확률이 낮아 직접 공략을 권하지 않습니다.`});
  const result={minimumCarry,safeCarry,safe:explain(safe,"SAFE"),standard:explain(standard,"STANDARD"),aggressive:explain(aggressive,"AGGRESSIVE"),layup:null};if(dangerAfter&&layup)result.layup={club:layup.name,carry:layup.carry,total:layup.total,success:layup.success,text:`${layup.name} 약 ${layup.total}m 레이업(성공률 ${layup.success}%) 후 다음 샷을 편한 거리로 남기는 대안입니다.`};return result;
 }
+export function verifiedCoursePlan({hole,remaining,points={},areas={},location=null}={}){
+ const count=a=>Array.isArray(a)?a.length:0;
+ const green=points.custom||points.center||null;
+ const tee=points.tee||null;
+ const hasGreen=Boolean(green),hasTee=Boolean(tee);
+ const verifiedAreas={
+  fairway:count(areas.fairway)>=3,bunker:count(areas.bunker)>=3,
+  water:count(areas.water)>=3,ob:count(areas.ob)>=3
+ };
+ const geometryScore=[hasTee,hasGreen,...Object.values(verifiedAreas)].filter(Boolean).length;
+ const confidence=geometryScore>=5?"높음":geometryScore>=2?"중간":"기초";
+ const par=Number(hole?.par||4),d=Number(remaining??hole?.distance??0);
+ const phase=par===3?"그린 공략":d<=110?"어프로치":d<=210?"세컨드":"티샷/장거리";
+ const warnings=[];
+ if(!hasGreen)warnings.push("그린 GPS 미검증");
+ if(!verifiedAreas.bunker&&(hole?.hazards||[]).some(x=>/벙커/.test(x)))warnings.push("벙커 위치 미검증");
+ if(!verifiedAreas.water&&(hole?.hazards||[]).some(x=>/물|호수|연못|해저드|계류/.test(x)))warnings.push("물/해저드 위치 미검증");
+ if(!verifiedAreas.ob&&(hole?.hazards||[]).some(x=>/OB|위험/.test(x)))warnings.push("OB/위험 경계 미검증");
+ return {phase,confidence,geometryScore,verifiedAreas,warnings,
+  headline:confidence==="높음"?`${phase} · 실측 지형 우선`:`${phase} · 보수적 공략`,
+  note:confidence==="높음"?"저장된 GPS 지형과 개인 클럽 분산을 함께 사용합니다.":"정밀 좌표가 부족해 공개 홀 특징과 개인 거리 기준으로 안전 여유를 크게 둡니다."
+ };
+}
