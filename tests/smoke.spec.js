@@ -260,3 +260,12 @@ test("live caddie falls back safely when personal short-game sample is insuffici
  await first.getByLabel("트러블 남은 거리").selectOption("10");await first.getByLabel("트러블 라이").selectOption("fairway");
  await expect(first.getByText(/개인 표본이 3구 미만|내 성공률 기반 추천/)).toBeVisible();
 });
+
+
+test("voice caddie controls are available with auto-read setting", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
+ await expect(first.getByRole("button",{name:"AI 캐디 음성 듣기"})).toBeVisible();
+ await expect(first.getByRole("button",{name:"AI 캐디 음성 정지"})).toBeVisible();
+ await first.getByLabel("추천 자동 읽기").check();await expect(first.getByLabel("추천 자동 읽기")).toBeChecked();
+});
