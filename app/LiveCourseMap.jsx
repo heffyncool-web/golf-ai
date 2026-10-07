@@ -1,7 +1,10 @@
 "use client";
-import {useEffect,useRef,useState} from "react";\nimport {buildCourseGeoJSON,downloadGeoJSON} from "./courseGeo";\nimport {areasGeoJSON} from "./courseAreas";
+import {useEffect,useRef,useState} from "react";
+import {buildCourseGeoJSON,downloadGeoJSON} from "./courseGeo";
+import {areasGeoJSON} from "./courseAreas";
 export default function LiveCourseMap({location,target,points={},shots=[],areas={}}){
- const el=useRef(null),mapRef=useRef(null);\n const [base,setBase]=useState("satellite");
+ const el=useRef(null),mapRef=useRef(null);
+ const [base,setBase]=useState("satellite");
  useEffect(()=>{let dead=false;(async()=>{try{
   const ml=await import("maplibre-gl");if(dead||!el.current)return;
   const center=location?[location.lng,location.lat]:target?[target.lng,target.lat]:[128.73,35.65];
