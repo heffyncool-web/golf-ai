@@ -4,6 +4,7 @@ export const builtInCourses = [
     name: "청도 그레이스CC",
     region: "경상북도 청도군",
     venueType: "27홀",
+    mapCenter: { lat: 35.6642636516, lng: 128.6477776634, source: "한국관광공사 공개 위치" },
     defaultRotation: ["Lake", "Mountain"],
     courses: {
       Lake: [
