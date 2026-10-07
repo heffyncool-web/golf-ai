@@ -205,3 +205,21 @@ test("AI guide compares carry clearance downstream risk and layup", async ({ pag
   await expect(first.getByText("AGGRESSIVE",{exact:true})).toBeVisible();
   await expect(first.getByText("더 쉬운 대안")).toBeVisible();
 });
+
+
+test("personal club carry dispersion and success persist and affect strategy UI", async ({ page }) => {
+  await page.reload();
+  await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
+  await page.getByLabel("5W 캐리").fill("175");
+  await page.getByLabel("5W 총거리").fill("185");
+  await page.getByLabel("5W 분산").fill("10");
+  await page.getByLabel("5W 성공률").fill("88");
+  await page.reload();
+  await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
+  await expect(page.getByLabel("5W 캐리")).toHaveValue("175");
+  await expect(page.getByLabel("5W 성공률")).toHaveValue("88");
+  await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+  const first=page.locator(".coursePanel").first();
+  await first.getByRole("button",{name:"공략 가이드"}).click();
+  await expect(first.getByText(/유효 캐리|개인 분산/).first()).toBeVisible();
+});
