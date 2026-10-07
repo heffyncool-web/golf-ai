@@ -20,9 +20,9 @@ test("approved dashboard desktop geometry and screenshot", async ({ page }, test
   expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(3);
   expect(Math.abs(a.width - b.width)).toBeLessThan(30);
   expect(a.width).toBeGreaterThan(380);
-  await expect(page.locator(".visualMap.satelliteMap").first()).toBeVisible();
+  await expect(page.locator(".liveVisualMap").first()).toBeVisible();
   await expect(page.locator(".coursePanel")).toHaveCount(2);
-  await expect(page.getByText(/위성형 공략도/).first()).toBeVisible();
+  await expect(page.getByText(/실제 위성지도/).first()).toBeVisible();
   const shot = await page.screenshot({ fullPage: true });
   await testInfo.attach("approved-dashboard-desktop",{body:shot,contentType:"image/png"});
 });
@@ -91,7 +91,7 @@ test("club distance changes AI recommendation and landing label", async ({ page 
   await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   const first=page.locator(".coursePanel").first();
   await expect(first.getByText(/드라이버 \(230m\)/)).toBeVisible();
-  await expect(first.locator(".visualMap svg")).toBeVisible();
+  await expect(first.locator(".liveVisualMap")).toBeVisible();
 });
 
 test("all holes modal opens and selects a hole", async ({ page }) => {
@@ -157,7 +157,7 @@ test("hole full-view toggle opens a real satellite map modal and closes", async 
   const toggle=first.getByLabel("Lake 홀 전체보기");
   await toggle.check();
   await expect(page.locator(".mapModal")).toBeVisible();
-  await expect(page.locator(".mapModal .satelliteMap")).toBeVisible();
+  await expect(page.locator(".mapModal .liveVisualMap")).toBeVisible();
   await page.getByRole("button",{name:"지도 닫기"}).click();
   await expect(page.locator(".mapModal")).toHaveCount(0);
 });
@@ -462,4 +462,13 @@ test("distance panel exposes field geometry verification", async ({ page }) => {
   await expect(page.getByText(/이 홀 실측 검증/).first()).toBeVisible();
   await expect(page.getByRole("button",{name:"티잉구역 저장"}).first()).toBeVisible();
   await expect(page.getByText(/공개 코스맵은 참고자료/).first()).toBeVisible();
+});
+
+test("strategy confidence starts conservatively until field geometry is verified", async ({ page }) => {
+ await page.reload();
+ const first=page.locator(".coursePanel").first();
+ await first.getByRole("button",{name:"공략 가이드"}).click();
+ await expect(first.getByText(/지형 신뢰도/)).toBeVisible();
+ await expect(first.getByText(/보수적 공략/)).toBeVisible();
+ await expect(first.getByText(/그린 GPS 미검증/)).toBeVisible();
 });
