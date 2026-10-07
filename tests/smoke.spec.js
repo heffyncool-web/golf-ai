@@ -439,3 +439,18 @@ test("field course boundary capture supports fairway green bunker water and OB",
  await expect(first.getByText(/그린 1점/)).toBeVisible();
  await expect(first.getByRole("button",{name:"코스 경계 초기화"})).toBeVisible();
 });
+
+
+test("AI guide exposes slope effective distance and target bias", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"공략 가이드"}).click();
+ await expect(first.getByLabel("목표 고저차")).toBeVisible();
+ await expect(first.getByText(/바람 포함 유효거리/)).toBeVisible();
+ await expect(first.getByText(/추천 목표 보정/)).toBeVisible();
+});
+
+test("course field screen exposes learned risk mission", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();
+ await expect(first.getByText("코스 위험 학습 미션")).toBeVisible();
+});
