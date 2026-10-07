@@ -1,14 +1,21 @@
 import {NextResponse} from "next/server";
 export const runtime="nodejs";
-const endpoint="https://overpass.kumi.systems/api/interpreter";
+const endpoints=["https://overpass.private.coffee/api/interpreter","https://overpass.nchc.org.tw/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
 const allowed=new Set(["tee","green","fairway","bunker","water_hazard","hole"]);
 export async function GET(request){
  const u=new URL(request.url),lat=Number(u.searchParams.get("lat")),lng=Number(u.searchParams.get("lng"));
  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<33||lat>39||lng<124||lng>132)return NextResponse.json({error:"지원하지 않는 좌표"},{status:400});
  const q=`[out:json][timeout:20];(nwr(around:1800,${lat},${lng})["golf"~"^(hole|tee|green|fairway|bunker|water_hazard)$"];);out geom;`;
  try{
-  const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({data:q}),signal:AbortSignal.timeout(24000),cache:"no-store"});
-  if(!response.ok)throw Error("OSM 서버 "+response.status);
+  let response=null;const errors=[];
+  for(const endpoint of endpoints){
+   try{
+    const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded","Accept":"application/json","User-Agent":"GolfAI-CourseViewer/1.0 (OpenStreetMap attribution in UI)"},body:new URLSearchParams({data:q}),signal:AbortSignal.timeout(9500),cache:"no-store"});
+    if(!r.ok){errors.push(r.status);continue;}
+    response=r;break;
+   }catch(e){errors.push(e?.name==="TimeoutError"?"timeout":"network");}
+  }
+  if(!response)throw Error("Overpass unavailable: "+errors.join(","));
   const data=await response.json();
   const features=[];
   for(const e of data.elements||[]){
@@ -22,5 +29,5 @@ export async function GET(request){
    features.push({type:"Feature",properties:{...e.tags,osmId:e.id},geometry:closed?{type:"Polygon",coordinates:[coords]}:{type:"LineString",coordinates:coords}});
   }
   return NextResponse.json({type:"FeatureCollection",features,source:"OpenStreetMap / Overpass",license:"ODbL",attribution:"© OpenStreetMap contributors",fetchedAt:new Date().toISOString()},{headers:{"Cache-Control":"public, s-maxage=3600, stale-while-revalidate=86400"}});
- }catch(e){return NextResponse.json({error:"오픈 코스 데이터 서버 연결 실패. 나중에 재시도하거나 GeoJSON 파일을 불러오세요."},{status:503})}
+ }catch(e){return NextResponse.json({error:"OSM 데이터 제공 서버가 응답하지 않습니다. 잠시 후 재시도하거나 GeoJSON 파일을 불러오세요.",retryable:true},{status:503,headers:{"Retry-After":"60"}})}
 }
