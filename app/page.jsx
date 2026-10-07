@@ -157,7 +157,7 @@ export default function Page(){
   </div>
 }
 
-function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,shortMatrix,scores,shots,setScoreField,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,memo,setMemo,setView}){
+function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,shortMatrix,scores,shots,setScoreField,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,startLiveLocation,stopLiveLocation,fetchLiveWeather,memo,setMemo,setView}){
   const [mode,setMode]=useState("live");
   const [selected,setSelected]=useState({0:0,1:0});
   const [panelTabs,setPanelTabs]=useState({0:"info",1:"info"});
@@ -194,7 +194,7 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,shortMatr
       {names.map((name,ci)=>{
         const hi=selected[ci]||0,hole=course.courses?.[name]?.[hi];
         const index=currentStepFor(ci,hi);
-        return <CoursePanel key={name} courseName={name} courseIndex={ci} hole={hole} holeIndex={hi} panelTab={panelTabs[ci]} setPanelTab={t=>setPanelTabs(p=>({...p,[ci]:t}))} clubs={clubs} clubStats={clubStats} shortMatrix={shortMatrix} score={scores[index]} setScore={(k,v)=>setScoreField(index,k,v)} shots={shots[index]||[]} addShot={s=>addShot(index,s)} deleteShot={id=>deleteShot(index,id)} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} onScore={()=>{setStep(index);setPanelTabs(p=>({...p,[ci]:"score"}))}} onNext={()=>nextPanel(ci)}/>;
+        return <CoursePanel key={name} courseName={name} courseIndex={ci} hole={hole} holeIndex={hi} panelTab={panelTabs[ci]} setPanelTab={t=>setPanelTabs(p=>({...p,[ci]:t}))} clubs={clubs} clubStats={clubStats} shortMatrix={shortMatrix} score={scores[index]} setScore={(k,v)=>setScoreField(index,k,v)} shots={shots[index]||[]} addShot={s=>addShot(index,s)} deleteShot={id=>deleteShot(index,id)} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} startLiveLocation={startLiveLocation} stopLiveLocation={stopLiveLocation} fetchLiveWeather={fetchLiveWeather} onScore={()=>{setStep(index);setPanelTabs(p=>({...p,[ci]:"score"}))}} onNext={()=>nextPanel(ci)}/>;
       })}
     </div>}
 
