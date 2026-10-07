@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";\nimport {buildCourseGeoJSON,downloadGeoJSON} from "./courseGeo";
 export default function LiveCourseMap({location,target,points={},shots=[]}){
  const el=useRef(null),mapRef=useRef(null);\n const [base,setBase]=useState("satellite");
  useEffect(()=>{let dead=false;(async()=>{try{
@@ -11,5 +11,5 @@ export default function LiveCourseMap({location,target,points={},shots=[]}){
   add(location,"현재 위치","#1565c0");add(target,"현재 목표","#d32f2f");add(points.front,"그린 앞","#2e7d32");add(points.center,"그린 중앙","#00897b");add(points.back,"그린 뒤","#00695c");add(points.custom,"임의 목표","#ef6c00");
   shots.filter(x=>x.position).forEach((x,i)=>add(x.position,`${i+1}타 ${x.club} ${x.miss||""}`,"#7b1fa2"));
  }catch(e){if(el.current)el.current.innerHTML='<div style="padding:16px">지도 모듈을 불러오지 못했습니다. GPS 거리 기능은 계속 사용할 수 있습니다.</div>'}})();return()=>{dead=true;mapRef.current?.remove();mapRef.current=null}},[base,location?.lat,location?.lng,target?.lat,target?.lng,JSON.stringify(points),shots.length]);
- return <div><div className="inline"><button aria-label="위성지도 보기" onClick={()=>setBase("satellite")}>위성</button><button aria-label="일반지도 보기" onClick={()=>setBase("street")}>일반지도</button><small>{base==="satellite"?"위성영상":"일반지도"}</small></div><div ref={el} aria-label="실제 인터랙티브 코스 지도" style={{height:360,borderRadius:14,overflow:"hidden",background:"#dde3e7"}}/><small>실제 인터랙티브 지도 · 위성/일반지도 전환. 위성영상은 촬영시점과 해상도 한계가 있으므로 현장 GPS와 함께 확인하세요.</small></div>
+ return <div><div className="inline"><button aria-label="위성지도 보기" onClick={()=>setBase("satellite")}>위성</button><button aria-label="일반지도 보기" onClick={()=>setBase("street")}>일반지도</button><small>{base==="satellite"?"위성영상":"일반지도"}</small><button aria-label="코스 GPS GeoJSON 내보내기" onClick={()=>downloadGeoJSON(buildCourseGeoJSON({points,shots}))}>GPS 데이터 내보내기</button></div><div ref={el} aria-label="실제 인터랙티브 코스 지도" style={{height:360,borderRadius:14,overflow:"hidden",background:"#dde3e7"}}/><small>실제 인터랙티브 지도 · 위성/일반지도 전환. 위성영상은 촬영시점과 해상도 한계가 있으므로 현장 GPS와 함께 확인하세요.</small></div>
 }
