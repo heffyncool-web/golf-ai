@@ -22,3 +22,11 @@ export function weaknessMissions(matrix=[]){
  return ranked.map((x,i)=>({id:`weak-${x.club}-${x.distance}-${x.lie}`,club:x.club,distance:x.distance,lie:x.lie,title:`${x.club} ${x.distance}m ${labelLie(x.lie)} 보완`,goal:`현재 성공률 ${x.successRate}% → 10구 중 8구 성공 목표`,priority:i+1}));
 }
 export function labelLie(lie){return({fairway:"보통 잔디",tight:"맨땅/타이트",rough:"깊은 러프",bunker:"벙커",highlip:"높은 턱 벙커"}[lie]||lie)}
+
+export function personalShortGameChoice(matrix=[],distance,lie="fairway"){
+ const d=Number(distance), candidates=matrix.filter(x=>Math.abs(x.distance-d)<=5&&x.lie===lie&&x.samples>=3);
+ if(!candidates.length)return null;
+ const ranked=[...candidates].sort((a,b)=>b.successRate-a.successRate||b.samples-a.samples);
+ const best=ranked[0],other=ranked.find(x=>x.club!==best.club);
+ return {best,other,confidence:best.samples>=10?"높음":best.samples>=5?"보통":"초기",text:other?`개인 기록상 ${best.club} 성공률 ${best.successRate}%가 ${other.club} ${other.successRate}%보다 높아 ${best.club}를 우선 추천합니다.`:`개인 기록상 ${best.club} ${best.distance}m 성공률은 ${best.successRate}%입니다.`};
+}
