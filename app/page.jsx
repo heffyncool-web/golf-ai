@@ -6,7 +6,7 @@ import { SATELLITE_MAPS } from "../data/satelliteMaps";
 import ShortGameAcademy, { getShortGameAdvice } from "./ShortGameAcademy";
 import { strategyOptions, defaultClubStats } from "./strategyEngine";
 import { learnClubStats, parseGolfzonText, parseGolfzonFile } from "./learningEngine";
-import { shortGameMatrix, weaknessMissions, labelLie } from "./practiceEngine";
+import { shortGameMatrix, weaknessMissions, labelLie, personalShortGameChoice } from "./practiceEngine";
 
 const NAV=[
   ["home","⌂","홈"],["schedule","▣","라운드 일정"],["caddie","♟","AI 캐디"],["score","▤","스코어카드"],
@@ -138,7 +138,7 @@ export default function Page(){
       <section className="view">
         {view==="home"&&<Home round={round} course={course} totalScore={totalScore} profile={profile} setView={setView}/>}
         {view==="schedule"&&<Schedule round={round} setRound={setRound}/>}
-        {view==="caddie"&&<CaddieDashboard course={course} rotation={rotation} step={step} setStep={setStep} clubs={clubs} clubStats={clubStats} scores={scores} shots={shots} setScoreField={setScoreField} addShot={addShot} deleteShot={deleteShot} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} memo={memo} setMemo={setMemo} setView={setView}/>}
+        {view==="caddie"&&<CaddieDashboard course={course} rotation={rotation} step={step} setStep={setStep} clubs={clubs} clubStats={clubStats} shortMatrix={shortMatrix} scores={scores} shots={shots} setScoreField={setScoreField} addShot={addShot} deleteShot={deleteShot} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} memo={memo} setMemo={setMemo} setView={setView}/>}
         {view==="score"&&<Score scores={scores} setScoreField={setScoreField} shots={shots}/>}
         {view==="courses"&&<Courses allCourses={[...builtInCourses,...customCourses]} customCourses={customCourses} addCourse={addCourse} setCustomCourses={setCustomCourses} courseId={courseId} setCourseId={setCourseId} course={course} rotation={rotation} updateCustomHole={updateCustomHole} setStep={setStep}/>}
         {view==="swing"&&<Swing/>}
@@ -152,7 +152,7 @@ export default function Page(){
   </div>
 }
 
-function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,scores,shots,setScoreField,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,memo,setMemo,setView}){
+function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,shortMatrix,scores,shots,setScoreField,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,memo,setMemo,setView}){
   const [mode,setMode]=useState("live");
   const [selected,setSelected]=useState({0:0,1:0});
   const [panelTabs,setPanelTabs]=useState({0:"info",1:"info"});
@@ -189,7 +189,7 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,scores,sh
       {names.map((name,ci)=>{
         const hi=selected[ci]||0,hole=course.courses?.[name]?.[hi];
         const index=currentStepFor(ci,hi);
-        return <CoursePanel key={name} courseName={name} courseIndex={ci} hole={hole} holeIndex={hi} panelTab={panelTabs[ci]} setPanelTab={t=>setPanelTabs(p=>({...p,[ci]:t}))} clubs={clubs} clubStats={clubStats} score={scores[index]} setScore={(k,v)=>setScoreField(index,k,v)} shots={shots[index]||[]} addShot={s=>addShot(index,s)} deleteShot={id=>deleteShot(index,id)} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} onScore={()=>{setStep(index);setPanelTabs(p=>({...p,[ci]:"score"}))}} onNext={()=>nextPanel(ci)}/>;
+        return <CoursePanel key={name} courseName={name} courseIndex={ci} hole={hole} holeIndex={hi} panelTab={panelTabs[ci]} setPanelTab={t=>setPanelTabs(p=>({...p,[ci]:t}))} clubs={clubs} clubStats={clubStats} shortMatrix={shortMatrix} score={scores[index]} setScore={(k,v)=>setScoreField(index,k,v)} shots={shots[index]||[]} addShot={s=>addShot(index,s)} deleteShot={id=>deleteShot(index,id)} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} onScore={()=>{setStep(index);setPanelTabs(p=>({...p,[ci]:"score"}))}} onNext={()=>nextPanel(ci)}/>;
       })}
     </div>}
 
@@ -205,7 +205,7 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,scores,sh
   </div>
 }
 
-function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab,clubs,clubStats,score,setScore,shots,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,onScore,onNext}){
+function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab,clubs,clubStats,shortMatrix,score,setScore,shots,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,onScore,onNext}){
   if(!hole)return <div className="coursePanel">데이터 없음</div>;
   const target=hole.greenLat&&hole.greenLng?{lat:Number(hole.greenLat),lng:Number(hole.greenLng)}:null;
   const gpsRemain=distanceMeters(location,target),shotBearing=bearing(location,target),autoRelation=windRelation(weather.windDeg,shotBearing);
@@ -216,7 +216,8 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   const [trouble,setTrouble]=useState("fairway"),[shortDistance,setShortDistance]=useState(20);
   const [hazardFront,setHazardFront]=useState(150),[hazardWidth,setHazardWidth]=useState(15),[afterRisk,setAfterRisk]=useState("none");
   const strategy=strategyOptions({clubs,clubStats,remaining:remain,hazard:{front:hazardFront,width:hazardWidth},downstreamRisk:afterRisk,missBias:profile.bias});
-  const shortAdvice=getShortGameAdvice(shortDistance,trouble,"56°");
+  const personalChoice=personalShortGameChoice(shortMatrix,shortDistance,trouble);
+  const shortAdvice=getShortGameAdvice(shortDistance,trouble,personalChoice?.best?.club||"56°");
   const color=courseIndex===0?"blue":"orange";
   return <article className={"coursePanel "+color}>
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{hole.distance}m</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
@@ -252,7 +253,7 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
         {panelTab==="trouble"&&<div className="detailPanel"><h4>상황별 쉬운 공략</h4>
           <div className="scoreInputs"><label>남은 거리<select aria-label="트러블 남은 거리" value={shortDistance} onChange={e=>setShortDistance(Number(e.target.value))}>{[5,10,15,20,30,40,50].map(d=><option key={d} value={d}>{d}m</option>)}</select></label>
           <label>라이<select aria-label="트러블 라이" value={trouble} onChange={e=>setTrouble(e.target.value)}><option value="fairway">보통 잔디</option><option value="tight">맨땅/잔디 거의 없음</option><option value="rough">깊은 러프</option><option value="bunker">그린사이드 벙커</option><option value="highlip">턱 바로 앞 벙커</option><option value="divot">디봇</option><option value="uphill">왼발 오르막</option><option value="downhill">왼발 내리막</option></select></label></div>
-          <p><b>추천 {shortAdvice.club}</b> · {shortAdvice.title}</p><p><b>셋업:</b> {shortAdvice.setup}</p><p><b>거리감:</b> {shortAdvice.feel}</p><p><b>목표:</b> {shortAdvice.target}</p><p className="warn"><b>실수 방지:</b> {shortAdvice.avoid}</p>
+          {personalChoice?<div className="strategyBox"><h4><span>★</span> 내 성공률 기반 추천</h4><p><b>{personalChoice.best.club} {personalChoice.best.distance}m · 성공률 {personalChoice.best.successRate}%</b> · {personalChoice.best.samples}구 · 신뢰도 {personalChoice.confidence}</p><p>{personalChoice.text}</p>{personalChoice.other&&<p>비교: {personalChoice.other.club} {personalChoice.other.successRate}% ({personalChoice.other.samples}구)</p>}</div>:<p className="warn">이 거리·라이의 개인 표본이 3구 미만이라 기본 안전 공략을 사용합니다.</p>}<p><b>추천 {personalChoice?.best?.club||shortAdvice.club}</b> · {shortAdvice.title}</p><p><b>셋업:</b> {shortAdvice.setup}</p><p><b>거리감:</b> {shortAdvice.feel}</p><p><b>목표:</b> {shortAdvice.target}</p><p className="warn"><b>실수 방지:</b> {shortAdvice.avoid}</p>
         </div>}
         {panelTab==="score"&&<div className="detailPanel"><h4>스코어 기록</h4><div className="scoreInputs"><label>타수<input aria-label={courseName+" 타수"} type="number" value={score.strokes} onChange={e=>setScore("strokes",e.target.value)}/></label><label>퍼트<input type="number" value={score.putts} onChange={e=>setScore("putts",e.target.value)}/></label><label>벌타<input type="number" value={score.penalty} onChange={e=>setScore("penalty",e.target.value)}/></label></div><h4>샷 기록</h4><div className="shotQuick"><select value={shotClub} onChange={e=>setShotClub(e.target.value)}>{Object.keys(clubs).map(c=><option key={c}>{c}</option>)}</select><input aria-label={courseName+" 샷 거리"} type="number" value={shotDist} onChange={e=>setShotDist(e.target.value)} placeholder="거리"/><select value={miss} onChange={e=>setMiss(e.target.value)}>{MISSES.map(m=><option key={m}>{m}</option>)}</select><button onClick={()=>{addShot({club:shotClub,distance:Number(shotDist)||0,miss,at:new Date().toISOString()});setShotDist("")}}>추가</button></div><div className="shotRows">{shots.map((s,i)=><div key={s.id}><span>{i+1}타 {s.club} · {s.distance||"-"}m · {s.miss}</span><button onClick={()=>deleteShot(s.id)}>삭제</button></div>)}</div></div>}
       </div>
