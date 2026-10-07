@@ -223,7 +223,7 @@ function CoursePanel({courseName,courseIndex,courseCenter,hole,holeIndex,panelTa
   const targetKey=`golfTarget:${courseName}:${hole.hole}`;
   const [savedTarget,setSavedTarget]=useState(null);
   const [dailyTee,setDailyTee]=useState(null);
-  const [downloadedCourse,setDownloadedCourse]=useState(null);
+  const [downloadedCourse,setDownloadedCourse]=useState(null);const [osmStatus,setOsmStatus]=useState("");
   const courseFileRef=useRef(null);
   const [greenPoints,setGreenPoints]=useState({tee:null,front:null,center:null,back:null,custom:null,a:null,b:null});
   const [courseAreas,setCourseAreas]=useState(emptyCourseAreas()),[areaType,setAreaType]=useState("fairway");
@@ -232,6 +232,7 @@ function CoursePanel({courseName,courseIndex,courseCenter,hole,holeIndex,panelTa
   const displayAreas={...emptyCourseAreas(),...(downloadedCourse?.areas||{}),...Object.fromEntries(Object.entries(courseAreas).filter(([,v])=>Array.isArray(v)&&v.length))};
   const target=greenPoints.custom||greenPoints.center||downloadedCourse?.points?.center||savedTarget||(hole.greenLat&&hole.greenLng?{lat:Number(hole.greenLat),lng:Number(hole.greenLng)}:null);
   const importCourseFile=async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=normalizeCourseImport(await f.text());setDownloadedCourse(data);localStorage.setItem(targetKey+":downloadedCourse",JSON.stringify(data))}catch(err){alert("코스 파일을 읽지 못했습니다: "+err.message)}finally{e.target.value=""}};
+  const autoLoadCourse=async()=>{setOsmStatus("오픈 코스 데이터 검색 중…");try{if(!courseCenter)throw Error("골프장 중심 좌표가 없습니다");const r=await fetch(`/api/course-data?lat=${courseCenter.lat}&lng=${courseCenter.lng}`);const json=await r.json();if(!r.ok)throw Error(json.error||"다운로드 실패");const found=selectOSMHole(json,hole.hole,courseName);if(found.status!=="estimated"){setOsmStatus(found.reason+" · 다른 코스 데이터 파일을 불러오거나 현장에서 보정하세요.");return}const data=normalizeCourseImport({type:"FeatureCollection",features:found.features});data.source="OpenStreetMap (자동 추정)";data.attribution="© OpenStreetMap contributors · ODbL";data.matchStatus=found.reason;setDownloadedCourse(data);localStorage.setItem(targetKey+":downloadedCourse",JSON.stringify(data));setOsmStatus(found.features.length+"개 객체 표시 · "+found.reason)}catch(e){setOsmStatus(e.message)}};
   const clearDownloadedCourse=()=>{setDownloadedCourse(null);localStorage.removeItem(targetKey+":downloadedCourse")};
   const savePoint=(name)=>{if(!location)return;const v={lat:location.lat,lng:location.lng,accuracy:location.accuracy,at:new Date().toISOString()};setGreenPoints(p=>{const n={...p,[name]:v};localStorage.setItem(targetKey+":points",JSON.stringify(n));return n})};
   const referenceStatus=graceReferenceStatus(courseName,hole.hole);
@@ -277,7 +278,7 @@ function CoursePanel({courseName,courseIndex,courseCenter,hole,holeIndex,panelTa
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{dailyTeeToGreen!=null?dailyTeeToGreen:hole.distance}m{dailyTeeToGreen!=null?" · 오늘 티박스":""}</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
       <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} location={location} target={target} points={displayPoints} shots={shots} areas={displayAreas} courseCenter={courseCenter} hasDownloadedCourse={Boolean(downloadedCourse)}/>
-      <div className="holeDetails">
+      <div className="autoCourseImport"><button type="button" onClick={autoLoadCourse}>오픈 코스 데이터 자동 불러오기</button><small role="status">{osmStatus||downloadedCourse?.attribution||"OSM 오픈 데이터 기반 · 홀별 정확도는 현장 확인 필요"}</small></div><div className="holeDetails">
         <div className="innerTabs">
           <button className={panelTab==="info"?"on":""} onClick={()=>setPanelTab("info")}>홀 정보</button>
           <button className={panelTab==="guide"?"on":""} onClick={()=>setPanelTab("guide")}>공략 가이드</button>
