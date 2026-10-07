@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";\nimport {lessonScript,speakLesson,videoStoryboard} from "./mediaLessonEngine";
 
 const LIES=[
   {id:"fairway",label:"보통 잔디"},{id:"tight",label:"잔디 거의 없음/맨땅"},{id:"rough",label:"깊은 러프"},
@@ -34,7 +34,7 @@ export function getShortGameAdvice(distance,lie,club="56°"){ return advice(Numb
 export default function ShortGameAcademy(){
   const [distance,setDistance]=useState(10),[lie,setLie]=useState("fairway"),[club,setClub]=useState("56°");
   const [tab,setTab]=useState("situation"),[records,setRecords]=useState([]);
-  const a=useMemo(()=>advice(Number(distance),lie,club),[distance,lie,club]);
+  const a=useMemo(()=>advice(Number(distance),lie,club),[distance,lie,club]);\n  const lesson=lessonScript({title:`${distance}미터 어프로치 레슨`,situation:LIES.find(x=>x.id===lie)?.label,club:a.club,setup:a.setup,target:a.target,feel:a.feel,avoid:a.avoid,drill:"같은 거리 5구를 기록하고 캐리와 총거리를 비교하세요."}),storyboard=videoStoryboard({situation:LIES.find(x=>x.id===lie)?.label,club:a.club,setup:a.setup,target:a.target,feel:a.feel,avoid:a.avoid,drill:"5구 반복 후 결과를 기록"});
   const addRecord=()=>setRecords(r=>[{id:Date.now(),distance:Number(distance),lie,club:a.club,result:"성공"},...r].slice(0,30));
   return <div className="panel">
     <h2>상황별 공략 · 어프로치 아카데미</h2>
@@ -76,13 +76,13 @@ export default function ShortGameAcademy(){
       <p className="warn">Golfzon 화면/내보내기 형식이 확보되면 자동 가져오기 단계로 확장합니다.</p>
     </>}
     {tab==="media"&&<>
-      <h3>듣기 · 보기 레슨 라이브러리</h3>
+      <h3>듣기 · 보기 레슨 라이브러리</h3><div className="inline"><button className="primary" aria-label="현재 레슨 음성 재생" onClick={()=>speakLesson(lesson)}>현재 레슨 음성 재생</button><button aria-label="현재 레슨 대본 저장" onClick={()=>{const b=new Blob([lesson],{type:"text/plain"}),u=URL.createObjectURL(b),x=document.createElement("a");x.href=u;x.download=`golf-lesson-${distance}m.txt`;x.click();setTimeout(()=>URL.revokeObjectURL(u),500)}}>대본 저장</button></div><div className="strategyBox"><h4><span>▶</span> MP4 제작 스토리보드</h4>{storyboard.map(x=><p key={x.scene}><b>{x.scene}. {x.title}</b> · {x.text||"-"}</p>)}</div>
       <div className="cards">
         <div className="card"><small>오디오</small><b>운동 중 듣기</b><span>10m PW 퍼팅형 · 20m 벙커 · 맨땅 어프로치</span></div>
         <div className="card"><small>영상</small><b>짧은 MP4 레슨</b><span>셋업 → 목표점 → 스윙 느낌 → 실수 방지</span></div>
         <div className="card"><small>라운드 전</small><b>5분 복습</b><span>오늘 필요한 상황만 묶어 재생</span></div><div className="card"><small>정렬 루틴</small><b>목표선에 똑바로 서기</b><span>GPS 목표방위 → 휴대폰 나침반 → 발끝선·어깨선 평행 → 클럽페이스 목표 → 카메라 확인</span></div>
       </div>
-      <div className="strategyBox"><h4><span>⌖</span> MP3·MP4 공통 정렬 챕터</h4><p>① 공 뒤에서 목표점을 정합니다. ② GPS로 목표 방위각을 확인합니다. ③ 휴대폰을 목표선과 평행하게 두어 나침반 각도를 맞춥니다. ④ 클럽페이스를 목표에 먼저 맞춥니다. ⑤ 발끝선과 어깨선은 목표선에 평행하게 섭니다. ⑥ 카메라를 뒤쪽에 두고 발·어깨·클럽페이스를 최종 확인합니다. GPS의 이동 heading만으로 정지한 골퍼의 몸 방향을 판정하지 않습니다.</p></div><p className="warn">현재는 콘텐츠 구조와 재생목록 영역까지 구현했습니다. 실제 MP3 음성합성·MP4 자동제작은 미디어 생성 서버 연결 단계입니다.</p>
+      <div className="strategyBox"><h4><span>⌖</span> MP3·MP4 공통 정렬 챕터</h4><p>① 공 뒤에서 목표점을 정합니다. ② GPS로 목표 방위각을 확인합니다. ③ 휴대폰을 목표선과 평행하게 두어 나침반 각도를 맞춥니다. ④ 클럽페이스를 목표에 먼저 맞춥니다. ⑤ 발끝선과 어깨선은 목표선에 평행하게 섭니다. ⑥ 카메라를 뒤쪽에 두고 발·어깨·클럽페이스를 최종 확인합니다. GPS의 이동 heading만으로 정지한 골퍼의 몸 방향을 판정하지 않습니다.</p></div><p className="warn">현재 브라우저 한국어 음성 재생과 MP4 제작용 장면별 스토리보드까지 구현했습니다. 실제 MP3/MP4 파일 렌더링·보관은 미디어 서버 연결이 필요합니다.</p>
     </>}
   </div>
 }
