@@ -280,3 +280,12 @@ test("camera address alignment coach exposes overlay and correction controls", a
  await expect(first.getByText("재정렬 필요").first()).toBeVisible();
  await expect(first.getByRole("button",{name:"정렬 음성 피드백"})).toBeVisible();
 });
+
+
+test("camera coach exposes AI automatic joint alignment without claiming club-face vision", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
+ await expect(first.getByRole("button",{name:"AI 자동 관절 분석"})).toBeVisible();
+ await expect(first.getByText(/AI 자동 관절 분석을 켜기 전에는/)).toBeVisible();
+ await expect(first.getByLabel("클럽페이스 각도")).toBeVisible();
+});
