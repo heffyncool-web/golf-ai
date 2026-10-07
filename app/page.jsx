@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { builtInCourses, getCourseById } from "../data/courses";
 import { SATELLITE_MAPS } from "../data/satelliteMaps";
+import ShortGameAcademy from "./ShortGameAcademy";
 
 const NAV=[
   ["home","⌂","홈"],["schedule","▣","라운드 일정"],["caddie","♟","AI 캐디"],["score","▤","스코어카드"],
-  ["courses","♙","골프장 DB"],["swing","♧","스윙 분석"],["practice","⚯","연습/코칭"],["equipment","⌕","장비/클럽"],
+  ["courses","♙","골프장 DB"],["swing","♧","스윙 분석"],["shortgame","◎","상황별 공략·어프로치"],["practice","⚯","연습/코칭"],["equipment","⌕","장비/클럽"],
   ["weather","☀","날씨/바람"],["settings","⚙","설정"]
 ];
 const DEFAULT_CLUBS={Driver:220,"3W":200,"5W":180,Utility:170,"5I":160,"6I":150,"7I":140,"8I":130,"9I":120,PW:105,AW:90,SW:80};
@@ -133,6 +134,7 @@ export default function Page(){
         {view==="score"&&<Score scores={scores} setScoreField={setScoreField} shots={shots}/>}
         {view==="courses"&&<Courses allCourses={[...builtInCourses,...customCourses]} customCourses={customCourses} addCourse={addCourse} setCustomCourses={setCustomCourses} courseId={courseId} setCourseId={setCourseId} course={course} rotation={rotation} updateCustomHole={updateCustomHole} setStep={setStep}/>}
         {view==="swing"&&<Swing/>}
+        {view==="shortgame"&&<ShortGameAcademy/>}
         {view==="practice"&&<Practice items={practice} setItems={setPractice}/>}
         {view==="equipment"&&<Equipment clubs={clubs} setClubs={setClubs}/>}
         {view==="weather"&&<Weather value={weather} setValue={setWeather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather}/>}
