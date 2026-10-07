@@ -172,3 +172,20 @@ test("desktop reference viewport keeps Lake and Mountain side by side", async ({
   expect(a.width).toBeGreaterThan(390);
   expect(b.width).toBeGreaterThan(390);
 });
+
+
+test("short game academy and live caddie share trouble-shot guidance", async ({ page }) => {
+  await page.reload();
+  await page.locator(".nav").getByRole("button",{name:"상황별 공략·어프로치",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"상황별 공략 · 어프로치 아카데미"})).toBeVisible();
+  await page.getByLabel("현재 라이").selectOption("highlip");
+  await expect(page.getByText("탈출 우선 · 로프트 최대 확보")).toBeVisible();
+
+  await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+  const first=page.locator(".coursePanel").first();
+  await first.getByRole("button",{name:"트러블/어프로치"}).click();
+  await first.getByLabel("트러블 라이").selectOption("highlip");
+  await expect(first.getByText(/탈출 우선 · 로프트 최대 확보/)).toBeVisible();
+  await first.getByLabel("트러블 남은 거리").selectOption("10");
+  await expect(first.getByText(/추천 56°/)).toBeVisible();
+});
