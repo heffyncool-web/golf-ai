@@ -363,3 +363,14 @@ test("live GPS controls are available for continuous on-course tracking", async 
  await expect(first.getByRole("button",{name:"실시간 GPS 시작"})).toBeVisible();
  await expect(first.getByRole("button",{name:"실시간 GPS 정지"})).toBeVisible();
 });
+
+
+test("score shot can retain GPS context for hole review", async ({ page, context }) => {
+ await context.grantPermissions(["geolocation"]);await context.setGeolocation({latitude:35.647,longitude:128.735});
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();await first.getByRole("button",{name:"GPS 현재위치"}).click();
+ await first.getByRole("button",{name:"스코어"}).click();
+ await first.getByLabel(/샷 거리/).fill("210");await first.getByRole("button",{name:"추가",exact:true}).click();
+ await first.getByRole("button",{name:"홀 샷 복기"}).click();
+ await expect(first.getByText(/GPS 35\.647/)).toBeVisible();
+});
