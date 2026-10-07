@@ -289,3 +289,18 @@ test("camera coach exposes AI automatic joint alignment without claiming club-fa
  await expect(first.getByText(/AI 자동 관절 분석을 켜기 전에는/)).toBeVisible();
  await expect(first.getByLabel("클럽페이스 각도")).toBeVisible();
 });
+
+
+test("address session saves club target lie and alignment score", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
+ await first.getByLabel("어드레스 클럽").selectOption("7I");
+ await first.getByLabel("어드레스 목표거리").fill("140");
+ await first.getByLabel("발끝선 각도").fill("2");
+ await first.getByLabel("어깨선 각도").fill("3");
+ await first.getByLabel("샤프트 각도").fill("1");
+ await first.getByLabel("클럽페이스 각도").fill("2");
+ await first.getByRole("button",{name:"어드레스 세션 저장"}).click();
+ await expect(first.getByText(/7I · 140m ·/)).toBeVisible();
+ await expect(first.getByText(/정렬 양호/).last()).toBeVisible();
+});
