@@ -398,3 +398,16 @@ test("default short game wedge uses 56 degree naming", async ({ page }) => {
  await page.reload();await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
  await expect(page.getByText("56°",{exact:true}).first()).toBeVisible();
 });
+
+
+test("live caddie exposes real interactive map surface", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();
+ await expect(first.getByLabel("실제 인터랙티브 코스 지도")).toBeVisible();
+});
+
+test("camera coach exposes zero degree calibration", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
+ await expect(first.getByRole("button",{name:"카메라 정렬 기준 보정"})).toBeVisible();
+});
