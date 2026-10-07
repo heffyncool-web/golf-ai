@@ -342,3 +342,24 @@ test("alignment sessions survive reload and spoken pre-shot coach is available",
  const again=page.locator(".coursePanel").first();await again.getByRole("button",{name:"트러블/어프로치"}).click();
  await expect(again.getByText(/7I · 140m ·/).first()).toBeVisible();
 });
+
+
+test("live GPS can register a field pin target and restore distance workflow", async ({ page, context }) => {
+ await context.grantPermissions(["geolocation"]);
+ await context.setGeolocation({latitude:35.647,longitude:128.735});
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();
+ await first.getByRole("button",{name:"GPS 현재위치"}).click();
+ await expect(first.getByText(/GPS 연결됨/)).toBeVisible();
+ await first.getByRole("button",{name:"현재 위치를 그린 핀으로 저장"}).click();
+ await expect(first.getByText(/그린\/핀 좌표:/)).toBeVisible();
+ await expect(first.getByText(/잔여거리:/)).toBeVisible();
+ await expect(first.getByRole("button",{name:"저장 핀 삭제"})).toBeVisible();
+});
+
+test("live GPS controls are available for continuous on-course tracking", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();
+ await expect(first.getByRole("button",{name:"실시간 GPS 시작"})).toBeVisible();
+ await expect(first.getByRole("button",{name:"실시간 GPS 정지"})).toBeVisible();
+});
