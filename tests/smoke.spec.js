@@ -374,3 +374,14 @@ test("score shot can retain GPS context for hole review", async ({ page, context
  await first.getByRole("button",{name:"홀 샷 복기"}).click();
  await expect(first.getByText(/GPS 35\.647/)).toBeVisible();
 });
+
+
+test("field GPS supports green front center back custom target and two-point measure", async ({ page, context }) => {
+ await context.grantPermissions(["geolocation"]);await context.setGeolocation({latitude:35.647,longitude:128.735});
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();await first.getByRole("button",{name:"GPS 현재위치"}).click();
+ for(const name of ["그린 앞 저장","그린 중앙 저장","그린 뒤 저장","임의 목표 저장","거리측정 시작점 저장","거리측정 끝점 저장"])await first.getByRole("button",{name}).click();
+ await expect(first.getByText(/앞\/중앙\/뒤:/)).toBeVisible();
+ await expect(first.getByText(/A↔B 0m/)).toBeVisible();
+ await expect(first.getByRole("button",{name:"현장 GPS 포인트 초기화"})).toBeVisible();
+});
