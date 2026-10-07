@@ -219,9 +219,13 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,shortMatr
 function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab,clubs,clubStats,shortMatrix,score,setScore,shots,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,startLiveLocation,stopLiveLocation,fetchLiveWeather,onScore,onNext}){
   if(!hole)return <div className="coursePanel">데이터 없음</div>;
   const targetKey=`golfTarget:${courseName}:${hole.hole}`;
-  const [savedTarget,setSavedTarget]=useState(null);\n  const [greenPoints,setGreenPoints]=useState({front:null,center:null,back:null,custom:null,a:null,b:null});\n  const [courseAreas,setCourseAreas]=useState(emptyCourseAreas()),[areaType,setAreaType]=useState("fairway");
+  const [savedTarget,setSavedTarget]=useState(null);
+  const [greenPoints,setGreenPoints]=useState({front:null,center:null,back:null,custom:null,a:null,b:null});
+  const [courseAreas,setCourseAreas]=useState(emptyCourseAreas()),[areaType,setAreaType]=useState("fairway");
   useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(targetKey)||"null");setSavedTarget(v);const gp=JSON.parse(localStorage.getItem(targetKey+":points")||"null");if(gp)setGreenPoints(gp);const ar=JSON.parse(localStorage.getItem(targetKey+":areas")||"null");if(ar)setCourseAreas(ar)}catch{}},[targetKey]);
-  const target=greenPoints.custom||greenPoints.center||savedTarget||(hole.greenLat&&hole.greenLng?{lat:Number(hole.greenLat),lng:Number(hole.greenLng)}:null);\n  const savePoint=(name)=>{if(!location)return;const v={lat:location.lat,lng:location.lng,accuracy:location.accuracy,at:new Date().toISOString()};setGreenPoints(p=>{const n={...p,[name]:v};localStorage.setItem(targetKey+":points",JSON.stringify(n));return n})};\n  const pointDistances={front:distanceMeters(location,greenPoints.front),center:distanceMeters(location,greenPoints.center),back:distanceMeters(location,greenPoints.back),custom:distanceMeters(location,greenPoints.custom),measure:distanceMeters(greenPoints.a,greenPoints.b)};
+  const target=greenPoints.custom||greenPoints.center||savedTarget||(hole.greenLat&&hole.greenLng?{lat:Number(hole.greenLat),lng:Number(hole.greenLng)}:null);
+  const savePoint=(name)=>{if(!location)return;const v={lat:location.lat,lng:location.lng,accuracy:location.accuracy,at:new Date().toISOString()};setGreenPoints(p=>{const n={...p,[name]:v};localStorage.setItem(targetKey+":points",JSON.stringify(n));return n})};
+  const pointDistances={front:distanceMeters(location,greenPoints.front),center:distanceMeters(location,greenPoints.center),back:distanceMeters(location,greenPoints.back),custom:distanceMeters(location,greenPoints.custom),measure:distanceMeters(greenPoints.a,greenPoints.b)};
   const gpsRemain=distanceMeters(location,target),shotBearing=bearing(location,target),autoRelation=windRelation(weather.windDeg,shotBearing);
   const relation=weather.relation==="자동"?(autoRelation||"관계 미확인"):weather.relation;
   const driver=Number(clubs.Driver)||0,remain=gpsRemain??Math.max(0,Number(hole.distance||0)-driver),second=nearestClub(clubs,Math.min(190,remain));
@@ -231,7 +235,8 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   const [voiceAuto,setVoiceAuto]=useState(false),[voiceStatus,setVoiceStatus]=useState("대기");
   const [deviceHeading,setDeviceHeading]=useState(null),[alignStatus,setAlignStatus]=useState("나침반 미연결");
   const [hazardFront,setHazardFront]=useState(150),[hazardWidth,setHazardWidth]=useState(15),[afterRisk,setAfterRisk]=useState("none"),[elevationDelta,setElevationDelta]=useState(0);
-  const eff=effectiveDistance({distance:remain,elevationDelta,wind:weather.wind,relation}),strategy=strategyOptions({clubs,clubStats,remaining:eff.effective,hazard:{front:hazardFront,width:hazardWidth},downstreamRisk:afterRisk,missBias:profile.bias});\n  const currentRisk=location?positionRisk(location,courseAreas):"미분류",riskMission=riskMissionFromAreas(shots,courseAreas),chosen=strategy.standard,targetShift=targetBias({missBias:profile.bias,dispersion:chosen?.dispersion||0,riskLeft:/좌/.test(afterRisk),riskRight:/우/.test(afterRisk)});
+  const eff=effectiveDistance({distance:remain,elevationDelta,wind:weather.wind,relation}),strategy=strategyOptions({clubs,clubStats,remaining:eff.effective,hazard:{front:hazardFront,width:hazardWidth},downstreamRisk:afterRisk,missBias:profile.bias});
+  const currentRisk=location?positionRisk(location,courseAreas):"미분류",riskMission=riskMissionFromAreas(shots,courseAreas),chosen=strategy.standard,targetShift=targetBias({missBias:profile.bias,dispersion:chosen?.dispersion||0,riskLeft:/좌/.test(afterRisk),riskRight:/우/.test(afterRisk)});
   const personalChoice=personalShortGameChoice(shortMatrix,shortDistance,trouble);
   const shortAdvice=getShortGameAdvice(shortDistance,trouble,personalChoice?.best?.club||"56°");
   useEffect(()=>{if(voiceAuto&&panelTab==="trouble"){const id=setTimeout(()=>speakAdvice(),250);return()=>clearTimeout(id)}},[voiceAuto,shortDistance,trouble,personalChoice?.best?.club]);
@@ -243,7 +248,8 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   const voiceText=[`${shortDistance}미터 남았습니다.`,personalChoice?.text||"",`추천 클럽은 ${personalChoice?.best?.club||shortAdvice.club}입니다.`,shortAdvice.title,shortAdvice.setup,shortAdvice.feel,`목표는 ${shortAdvice.target}`,`주의할 점은 ${shortAdvice.avoid}`,targetBearing!=null?alignmentLesson(targetBearing,deviceHeading):""].filter(Boolean).join(" ");
   function speakAdvice(){if(typeof window==="undefined"||!("speechSynthesis" in window)){setVoiceStatus("이 브라우저는 음성 읽기를 지원하지 않습니다.");return}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(voiceText);u.lang="ko-KR";u.rate=.92;u.pitch=1;u.onstart=()=>setVoiceStatus("읽는 중");u.onend=()=>setVoiceStatus("완료");u.onerror=()=>setVoiceStatus("음성 재생 실패");window.speechSynthesis.speak(u)}
   function stopVoice(){if(typeof window!=="undefined"&&"speechSynthesis" in window)window.speechSynthesis.cancel();setVoiceStatus("정지")}
-  const pathReview=shotPathSummary(shots);\n  const color=courseIndex===0?"blue":"orange";
+  const pathReview=shotPathSummary(shots);
+  const color=courseIndex===0?"blue":"orange";
   return <article className={"coursePanel "+color}>
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{hole.distance}m</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
