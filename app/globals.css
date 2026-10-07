@@ -58,3 +58,6 @@
 @media(min-width:781px) and (max-width:1100px){
   .shell{grid-template-columns:124px 1fr}.roundBar{left:124px}.dualBoards{grid-template-columns:1fr 1fr}.panelCore{grid-template-columns:43% 57%;min-height:500px}.visualMap{min-height:500px}.courseStrips{grid-template-columns:1fr 1fr 215px}.top{gap:5px}.top .stat{padding-left:6px;padding-right:4px}.top select{display:none}.weatherTop{font-size:16px}.clubmini{font-size:9px}.clubmini .miniTitle{font-size:9px}.modeTabs button{min-height:36px;font-size:11px}.modeTabs button small{font-size:8px}
 }
+
+/* Harness: real satellite map in primary hole view */
+.liveVisualMap{background:#dce4e8}.liveVisualMap .liveMapShell,.liveVisualMap .liveMapCanvas{height:100%;min-height:inherit}.liveVisualMap .liveMapCanvas{border-radius:0!important}.liveVisualMap .maplibregl-map{height:100%}.satelliteBadge.pending{border-color:#ffd166}.satelliteBadge.verified{border-color:#68f0a5;background:#063a2ee8!important}@media(max-width:900px){.liveVisualMap .liveMapShell,.liveVisualMap .liveMapCanvas{height:520px}}@media(max-width:560px){.liveVisualMap .liveMapShell,.liveVisualMap .liveMapCanvas{height:430px}}
