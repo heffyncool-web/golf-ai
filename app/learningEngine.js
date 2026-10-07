@@ -20,3 +20,9 @@ export function parseGolfzonText(text){
  }
  return out;
 }
+
+export function parseGolfzonFile(name,text){
+ const lower=String(name||"").toLowerCase();
+ if(lower.endsWith(".json")){try{const d=JSON.parse(text),rows=Array.isArray(d)?d:(d.shots||d.data||[]);return rows.map(x=>({club:x.club||x.clubName,distance:Number(x.distance||x.totalDistance||x.total),carry:Number(x.carry||x.carryDistance)||undefined,lateral:Number(x.lateral||x.side)||0,miss:x.miss||x.result||"정타",source:"golfzon-file"})).filter(x=>x.club&&x.distance)}catch{return[]}}
+ return parseGolfzonText(text);
+}
