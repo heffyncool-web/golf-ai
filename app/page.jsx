@@ -225,11 +225,11 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   const [trouble,setTrouble]=useState("fairway"),[shortDistance,setShortDistance]=useState(20);
   const [voiceAuto,setVoiceAuto]=useState(false),[voiceStatus,setVoiceStatus]=useState("대기");
   const [deviceHeading,setDeviceHeading]=useState(null),[alignStatus,setAlignStatus]=useState("나침반 미연결");
-  useEffect(()=>{if(voiceAuto&&panelTab==="trouble"){const id=setTimeout(()=>speakAdvice(),250);return()=>clearTimeout(id)}},[voiceAuto,shortDistance,trouble,personalChoice?.best?.club]);
   const [hazardFront,setHazardFront]=useState(150),[hazardWidth,setHazardWidth]=useState(15),[afterRisk,setAfterRisk]=useState("none");
   const strategy=strategyOptions({clubs,clubStats,remaining:remain,hazard:{front:hazardFront,width:hazardWidth},downstreamRisk:afterRisk,missBias:profile.bias});
   const personalChoice=personalShortGameChoice(shortMatrix,shortDistance,trouble);
   const shortAdvice=getShortGameAdvice(shortDistance,trouble,personalChoice?.best?.club||"56°");
+  useEffect(()=>{if(voiceAuto&&panelTab==="trouble"){const id=setTimeout(()=>speakAdvice(),250);return()=>clearTimeout(id)}},[voiceAuto,shortDistance,trouble,personalChoice?.best?.club]);
   const targetBearing=location&&target?bearing(location,target):null;
   const align=alignmentGrade(targetBearing,deviceHeading);
   const orientationHandler=useRef(null);
