@@ -200,7 +200,7 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,shortMatr
       {names.map((name,ci)=>{
         const hi=selected[ci]||0,hole=course.courses?.[name]?.[hi];
         const index=currentStepFor(ci,hi);
-        return <CoursePanel key={name} courseName={name} courseIndex={ci} hole={hole} holeIndex={hi} panelTab={panelTabs[ci]} setPanelTab={t=>setPanelTabs(p=>({...p,[ci]:t}))} clubs={clubs} clubStats={clubStats} shortMatrix={shortMatrix} score={scores[index]} setScore={(k,v)=>setScoreField(index,k,v)} shots={shots[index]||[]} addShot={s=>addShot(index,s)} deleteShot={id=>deleteShot(index,id)} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} startLiveLocation={startLiveLocation} stopLiveLocation={stopLiveLocation} fetchLiveWeather={fetchLiveWeather} onScore={()=>{setStep(index);setPanelTabs(p=>({...p,[ci]:"score"}))}} onNext={()=>nextPanel(ci)}/>;
+        return <CoursePanel key={name} courseName={name} courseIndex={ci} courseCenter={course.mapCenter} hole={hole} holeIndex={hi} panelTab={panelTabs[ci]} setPanelTab={t=>setPanelTabs(p=>({...p,[ci]:t}))} clubs={clubs} clubStats={clubStats} shortMatrix={shortMatrix} score={scores[index]} setScore={(k,v)=>setScoreField(index,k,v)} shots={shots[index]||[]} addShot={s=>addShot(index,s)} deleteShot={id=>deleteShot(index,id)} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} startLiveLocation={startLiveLocation} stopLiveLocation={stopLiveLocation} fetchLiveWeather={fetchLiveWeather} onScore={()=>{setStep(index);setPanelTabs(p=>({...p,[ci]:"score"}))}} onNext={()=>nextPanel(ci)}/>;
       })}
     </div>}
 
@@ -216,7 +216,7 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,shortMatr
   </div>
 }
 
-function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab,clubs,clubStats,shortMatrix,score,setScore,shots,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,startLiveLocation,stopLiveLocation,fetchLiveWeather,onScore,onNext}){
+function CoursePanel({courseName,courseIndex,courseCenter,hole,holeIndex,panelTab,setPanelTab,clubs,clubStats,shortMatrix,score,setScore,shots,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,startLiveLocation,stopLiveLocation,fetchLiveWeather,onScore,onNext}){
   if(!hole)return <div className="coursePanel">데이터 없음</div>;
   const targetKey=`golfTarget:${courseName}:${hole.hole}`;
   const [savedTarget,setSavedTarget]=useState(null);
@@ -253,7 +253,7 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   return <article className={"coursePanel "+color}>
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{hole.distance}m</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
-      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver}/>
+      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} location={location} target={target} points={greenPoints} shots={shots} areas={courseAreas} courseCenter={courseCenter}/>
       <div className="holeDetails">
         <div className="innerTabs">
           <button className={panelTab==="info"?"on":""} onClick={()=>setPanelTab("info")}>홀 정보</button>
@@ -295,28 +295,12 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   </article>
 }
 
-function VisualCourseMap({hole,courseName,profile,driver}){
-  const isLake=/lake/i.test(courseName);
-  const image=isLake?SATELLITE_MAPS.lake:SATELLITE_MAPS.mountain;
-  const aimLeft=profile.bias==="좌중앙"?"46%":profile.bias==="우중앙"?"54%":"50%";
-  const landingTop=Math.max(26,58-Math.min(30,driver/12));
-  return <div className="visualMap satelliteMap" style={{backgroundImage:`linear-gradient(180deg,rgba(1,20,10,.02),rgba(1,20,10,.16)),url(${image})`}}>
-    <svg className="mapOverlay" viewBox="0 0 220 430" role="img" aria-label={courseName+" "+hole.hole+"홀 위성형 공략도"}>
-      <defs>
-        <filter id={"glow"+courseName+hole.hole}><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      </defs>
-      <path d="M110 385 C106 340 106 300 108 255 C110 205 102 165 108 120 C110 98 108 75 110 48" fill="none" stroke="#43e8ff" strokeWidth="3" strokeDasharray="7 7" filter={"url(#glow"+courseName+hole.hole+")"}/>
-      <path d={"M110 385 Q"+(profile.bias==="좌중앙"?92:profile.bias==="우중앙"?128:110)+" 280 "+(profile.bias==="좌중앙"?96:profile.bias==="우중앙"?124:110)+" 185"} fill="none" stroke="#fff" strokeWidth="2" opacity=".92"/>
-      <circle cx="110" cy="385" r="9" fill="#e91f2b" stroke="#fff" strokeWidth="3"/>
-      <circle cx="110" cy="363" r="8" fill="#fff" stroke="#fff" strokeWidth="2"/>
-      <circle cx="110" cy="341" r="8" fill="#2574ff" stroke="#fff" strokeWidth="2"/>
-      <circle cx="110" cy="319" r="8" fill="#202020" stroke="#fff" strokeWidth="2"/>
-      <circle cx={aimLeft==="46%"?100:aimLeft==="54%"?120:110} cy={landingTop*4.3} r="7" fill="#fff" stroke="#00a2ff" strokeWidth="3"/>
-      <text x="120" y="242" fill="#fff" fontSize="17" fontWeight="900" stroke="#17341f" strokeWidth=".8">150m</text>
-      <text x="120" y="184" fill="#fff" fontSize="17" fontWeight="900" stroke="#17341f" strokeWidth=".8">{driver}m</text>
-    </svg>
+function VisualCourseMap({hole,courseName,location,target,points,shots,areas,courseCenter}){
+  const verified=Boolean(location||target);
+  return <div className="visualMap liveVisualMap">
+    <LiveCourseMap location={location} target={target} points={points} shots={shots} areas={areas} fallbackCenter={courseCenter} compact showToolbar={false}/>
     {(hole.hazards||[]).slice(0,3).map((h,i)=><span className={"hazardLabel h"+i} key={h}>{h}</span>)}
-    <span className="conceptBadge satelliteBadge">위성형 공략도 · 실제 위치 검증 전</span>
+    <span className={"conceptBadge satelliteBadge "+(verified?"verified":"pending")}>{verified?"GPS/목표 위치 연결됨":"실제 위성지도 · 홀 좌표 검증 전"}</span>
   </div>
 }
 
