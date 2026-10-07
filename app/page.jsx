@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { builtInCourses, getCourseById } from "../data/courses";
 import { SATELLITE_MAPS } from "../data/satelliteMaps";
 import ShortGameAcademy, { getShortGameAdvice } from "./ShortGameAcademy";
@@ -66,7 +66,7 @@ export default function Page(){
   const [step,setStep]=useState(0);
   const [round,setRound]=useStoredState("golfRoundV3",{date:"2026-10-19",time:"13:10",players:4,fee:150000,caddie:"정규캐디"});
   const [weather,setWeather]=useStoredState("golfWeatherV3",{temp:22,wind:2,windDeg:null,relation:"자동",source:"수동",updatedAt:""});
-  const [location,setLocation]=useState(null);
+  const [location,setLocation]=useState(null);\n  const gpsWatch=useRef(null);
   const [gpsStatus,setGpsStatus]=useState("위치 미확인");
   const [memo,setMemo]=useStoredState("golfMemoV3","");
   const [practice,setPractice]=useStoredState("golfPracticeV3",[]);
@@ -91,6 +91,9 @@ export default function Page(){
       {enableHighAccuracy:true,timeout:10000,maximumAge:30000}
     );
   }
+  function startLiveLocation(){if(!navigator.geolocation){setGpsStatus("이 브라우저는 GPS를 지원하지 않습니다.");return}if(gpsWatch.current!=null)return;setGpsStatus("실시간 GPS 연결 중...");gpsWatch.current=navigator.geolocation.watchPosition(p=>{setLocation({lat:p.coords.latitude,lng:p.coords.longitude,accuracy:Math.round(p.coords.accuracy)});setGpsStatus("실시간 GPS 연결됨")},e=>setGpsStatus("위치 권한/신호 확인 필요: "+e.message),{enableHighAccuracy:true,maximumAge:3000,timeout:15000})}
+  function stopLiveLocation(){if(gpsWatch.current!=null&&navigator.geolocation){navigator.geolocation.clearWatch(gpsWatch.current);gpsWatch.current=null}setGpsStatus("실시간 GPS 정지")}
+  useEffect(()=>()=>{if(gpsWatch.current!=null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatch.current)},[]);
   async function fetchLiveWeather(locArg){
     const loc=locArg||location;if(!loc){requestLocation(fetchLiveWeather);return}
     try{
@@ -140,7 +143,7 @@ export default function Page(){
       <section className="view">
         {view==="home"&&<Home round={round} course={course} totalScore={totalScore} profile={profile} setView={setView}/>}
         {view==="schedule"&&<Schedule round={round} setRound={setRound}/>}
-        {view==="caddie"&&<CaddieDashboard course={course} rotation={rotation} step={step} setStep={setStep} clubs={clubs} clubStats={clubStats} shortMatrix={shortMatrix} scores={scores} shots={shots} setScoreField={setScoreField} addShot={addShot} deleteShot={deleteShot} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} memo={memo} setMemo={setMemo} setView={setView}/>}
+        {view==="caddie"&&<CaddieDashboard course={course} rotation={rotation} step={step} setStep={setStep} clubs={clubs} clubStats={clubStats} shortMatrix={shortMatrix} scores={scores} shots={shots} setScoreField={setScoreField} addShot={addShot} deleteShot={deleteShot} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} startLiveLocation={startLiveLocation} stopLiveLocation={stopLiveLocation} fetchLiveWeather={fetchLiveWeather} memo={memo} setMemo={setMemo} setView={setView}/>}
         {view==="score"&&<Score scores={scores} setScoreField={setScoreField} shots={shots}/>}
         {view==="courses"&&<Courses allCourses={[...builtInCourses,...customCourses]} customCourses={customCourses} addCourse={addCourse} setCustomCourses={setCustomCourses} courseId={courseId} setCourseId={setCourseId} course={course} rotation={rotation} updateCustomHole={updateCustomHole} setStep={setStep}/>}
         {view==="swing"&&<Swing/>}
@@ -207,9 +210,9 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,shortMatr
   </div>
 }
 
-function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab,clubs,clubStats,shortMatrix,score,setScore,shots,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,onScore,onNext}){
+function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab,clubs,clubStats,shortMatrix,score,setScore,shots,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,startLiveLocation,stopLiveLocation,fetchLiveWeather,onScore,onNext}){
   if(!hole)return <div className="coursePanel">데이터 없음</div>;
-  const target=hole.greenLat&&hole.greenLng?{lat:Number(hole.greenLat),lng:Number(hole.greenLng)}:null;
+  const targetKey=`golfTarget:${courseName}:${hole.hole}`;\n  const [savedTarget,setSavedTarget]=useState(null);\n  useEffect(()=>{try{const v=JSON.parse(localStorage.getItem(targetKey)||"null");setSavedTarget(v)}catch{}},[targetKey]);\n  const target=savedTarget||(hole.greenLat&&hole.greenLng?{lat:Number(hole.greenLat),lng:Number(hole.greenLng)}:null);
   const gpsRemain=distanceMeters(location,target),shotBearing=bearing(location,target),autoRelation=windRelation(weather.windDeg,shotBearing);
   const relation=weather.relation==="자동"?(autoRelation||"관계 미확인"):weather.relation;
   const driver=Number(clubs.Driver)||0,remain=gpsRemain??Math.max(0,Number(hole.distance||0)-driver),second=nearestClub(clubs,Math.min(190,remain));
@@ -223,9 +226,9 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   const strategy=strategyOptions({clubs,clubStats,remaining:remain,hazard:{front:hazardFront,width:hazardWidth},downstreamRisk:afterRisk,missBias:profile.bias});
   const personalChoice=personalShortGameChoice(shortMatrix,shortDistance,trouble);
   const shortAdvice=getShortGameAdvice(shortDistance,trouble,personalChoice?.best?.club||"56°");
-  const targetBearing=location&&hole?.greenLat&&hole?.greenLng?bearing(location,{lat:Number(hole.greenLat),lng:Number(hole.greenLng)}):null;
+  const targetBearing=location&&target?bearing(location,target):null;
   const align=alignmentGrade(targetBearing,deviceHeading);
-  async function startAlignment(){try{if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){const p=await DeviceOrientationEvent.requestPermission(true);if(p!=="granted"){setAlignStatus("센서 권한 필요");return}}const handler=e=>{const h=e.webkitCompassHeading!=null?e.webkitCompassHeading:(e.alpha!=null?(360-e.alpha)%360:null);if(h!=null){setDeviceHeading(h);setAlignStatus("나침반 연결됨")}};window.addEventListener("deviceorientationabsolute",handler);window.addEventListener("deviceorientation",handler);setAlignStatus("나침반 확인 중")}catch(e){setAlignStatus("센서 연결 실패")}}
+  const orientationHandler=useRef(null);\n  useEffect(()=>()=>{if(orientationHandler.current){window.removeEventListener("deviceorientationabsolute",orientationHandler.current);window.removeEventListener("deviceorientation",orientationHandler.current)}},[]);\n  async function startAlignment(){try{if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){const p=await DeviceOrientationEvent.requestPermission();if(p!=="granted"){setAlignStatus("센서 권한 필요");return}}const handler=e=>{const h=e.webkitCompassHeading!=null?e.webkitCompassHeading:(e.alpha!=null?(360-e.alpha)%360:null);if(h!=null){setDeviceHeading(h);setAlignStatus("나침반 연결됨")}};if(orientationHandler.current){window.removeEventListener("deviceorientationabsolute",orientationHandler.current);window.removeEventListener("deviceorientation",orientationHandler.current)}orientationHandler.current=handler;window.addEventListener("deviceorientationabsolute",handler);window.addEventListener("deviceorientation",handler);setAlignStatus("나침반 확인 중")}catch(e){setAlignStatus("센서 연결 실패")}}
   const voiceText=[`${shortDistance}미터 남았습니다.`,personalChoice?.text||"",`추천 클럽은 ${personalChoice?.best?.club||shortAdvice.club}입니다.`,shortAdvice.title,shortAdvice.setup,shortAdvice.feel,`목표는 ${shortAdvice.target}`,`주의할 점은 ${shortAdvice.avoid}`,targetBearing!=null?alignmentLesson(targetBearing,deviceHeading):""].filter(Boolean).join(" ");
   function speakAdvice(){if(typeof window==="undefined"||!("speechSynthesis" in window)){setVoiceStatus("이 브라우저는 음성 읽기를 지원하지 않습니다.");return}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(voiceText);u.lang="ko-KR";u.rate=.92;u.pitch=1;u.onstart=()=>setVoiceStatus("읽는 중");u.onend=()=>setVoiceStatus("완료");u.onerror=()=>setVoiceStatus("음성 재생 실패");window.speechSynthesis.speak(u)}
   function stopVoice(){if(typeof window!=="undefined"&&"speechSynthesis" in window)window.speechSynthesis.cancel();setVoiceStatus("정지")}
@@ -259,7 +262,7 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
           <div className="cards strategyCards">{[strategy.safe,strategy.standard,strategy.aggressive].map(x=><div className="card" key={x.mode}><small>{x.mode}</small><b>{x.club} · 캐리 {x.carry}m</b><span>예상 총거리 {x.total}m · 위험점수 {x.risk}</span><span>{x.text}</span></div>)}</div>
           {strategy.layup&&<div className="strategyBox"><h4><span>↘</span> 더 쉬운 대안</h4><p><b>{strategy.layup.club}</b> · {strategy.layup.text}</p></div>}
         </div>}
-        {panelTab==="distance"&&<div className="detailPanel"><h4>거리 측정</h4><div className="liveBtns"><button onClick={()=>requestLocation()}>GPS 현재위치</button><button onClick={()=>fetchLiveWeather()}>실시간 날씨</button></div><p>{gpsStatus}</p><p><b>현재 위치:</b> {location?location.lat.toFixed(5)+", "+location.lng.toFixed(5):"미확인"}</p><p><b>그린 좌표:</b> {target?target.lat.toFixed(5)+", "+target.lng.toFixed(5):"미등록"}</p><p><b>잔여거리:</b> {gpsRemain!=null?gpsRemain+"m":"그린 좌표 등록 시 GPS 계산"}</p></div>}
+        {panelTab==="distance"&&<div className="detailPanel"><h4>거리 측정</h4><div className="liveBtns"><button onClick={()=>requestLocation()}>GPS 현재위치</button><button aria-label="실시간 GPS 시작" onClick={startLiveLocation}>실시간 GPS 시작</button><button aria-label="실시간 GPS 정지" onClick={stopLiveLocation}>GPS 정지</button><button onClick={()=>fetchLiveWeather()}>실시간 날씨</button></div><p>{gpsStatus}</p><p><b>현재 위치:</b> {location?location.lat.toFixed(5)+", "+location.lng.toFixed(5):"미확인"}</p><p><b>그린/핀 좌표:</b> {target?target.lat.toFixed(5)+", "+target.lng.toFixed(5):"미등록"}</p><div className="inline"><button aria-label="현재 위치를 그린 핀으로 저장" disabled={!location} onClick={()=>{const v={lat:location.lat,lng:location.lng,accuracy:location.accuracy,at:new Date().toISOString()};localStorage.setItem(targetKey,JSON.stringify(v));setSavedTarget(v)}}>현재 위치를 그린/핀으로 저장</button>{savedTarget&&<button aria-label="저장 핀 삭제" onClick={()=>{localStorage.removeItem(targetKey);setSavedTarget(null)}}>저장 핀 삭제</button>}</div><p className="warn">현장 GPS 저장값은 정확도 {savedTarget?.accuracy??"-"}m 참고값입니다. 당일 핀 위치는 직접 확인해 저장하세요.</p><p><b>잔여거리:</b> {gpsRemain!=null?gpsRemain+"m":"그린 좌표 등록 시 GPS 계산"}</p></div>}
         {panelTab==="memo"&&<div className="detailPanel"><h4>메모/사진</h4><textarea placeholder={courseName+" "+hole.hole+"H 메모"}/><input aria-label={courseName+" 사진 선택"} type="file" accept="image/*" onChange={e=>{const file=e.target.files?.[0];if(file){if(photo)URL.revokeObjectURL(photo);setPhoto(URL.createObjectURL(file))}}}/>{photo&&<img className="memoPreview" src={photo} alt={courseName+" 선택 사진 미리보기"}/>}</div>}
         {panelTab==="trouble"&&<div className="detailPanel"><h4>상황별 쉬운 공략</h4>
           <div className="scoreInputs"><label>남은 거리<select aria-label="트러블 남은 거리" value={shortDistance} onChange={e=>setShortDistance(Number(e.target.value))}>{[5,10,15,20,30,40,50].map(d=><option key={d} value={d}>{d}m</option>)}</select></label>
