@@ -80,9 +80,9 @@ export default function ShortGameAcademy(){
       <div className="cards">
         <div className="card"><small>오디오</small><b>운동 중 듣기</b><span>10m PW 퍼팅형 · 20m 벙커 · 맨땅 어프로치</span></div>
         <div className="card"><small>영상</small><b>짧은 MP4 레슨</b><span>셋업 → 목표점 → 스윙 느낌 → 실수 방지</span></div>
-        <div className="card"><small>라운드 전</small><b>5분 복습</b><span>오늘 필요한 상황만 묶어 재생</span></div>
+        <div className="card"><small>라운드 전</small><b>5분 복습</b><span>오늘 필요한 상황만 묶어 재생</span></div><div className="card"><small>정렬 루틴</small><b>목표선에 똑바로 서기</b><span>GPS 목표방위 → 휴대폰 나침반 → 발끝선·어깨선 평행 → 클럽페이스 목표 → 카메라 확인</span></div>
       </div>
-      <p className="warn">현재는 콘텐츠 구조와 재생목록 영역까지 구현했습니다. 실제 MP3 음성합성·MP4 자동제작은 미디어 생성 서버 연결 단계입니다.</p>
+      <div className="strategyBox"><h4><span>⌖</span> MP3·MP4 공통 정렬 챕터</h4><p>① 공 뒤에서 목표점을 정합니다. ② GPS로 목표 방위각을 확인합니다. ③ 휴대폰을 목표선과 평행하게 두어 나침반 각도를 맞춥니다. ④ 클럽페이스를 목표에 먼저 맞춥니다. ⑤ 발끝선과 어깨선은 목표선에 평행하게 섭니다. ⑥ 카메라를 뒤쪽에 두고 발·어깨·클럽페이스를 최종 확인합니다. GPS의 이동 heading만으로 정지한 골퍼의 몸 방향을 판정하지 않습니다.</p></div><p className="warn">현재는 콘텐츠 구조와 재생목록 영역까지 구현했습니다. 실제 MP3 음성합성·MP4 자동제작은 미디어 생성 서버 연결 단계입니다.</p>
     </>}
   </div>
 }
