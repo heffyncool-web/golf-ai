@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { builtInCourses, getCourseById } from "../data/courses";
 import { SATELLITE_MAPS } from "../data/satelliteMaps";
 import ShortGameAcademy, { getShortGameAdvice } from "./ShortGameAcademy";
-import { strategyOptions } from "./strategyEngine";
+import { strategyOptions, defaultClubStats } from "./strategyEngine";
 
 const NAV=[
   ["home","⌂","홈"],["schedule","▣","라운드 일정"],["caddie","♟","AI 캐디"],["score","▤","스코어카드"],
@@ -54,6 +54,7 @@ function currentStepFor(courseIndex,holeIndex){return courseIndex*9+holeIndex}
 export default function Page(){
   const [view,setView]=useState("caddie");
   const [clubs,setClubs]=useStoredState("golfClubsV3",DEFAULT_CLUBS);
+  const [clubStats,setClubStats]=useStoredState("golfClubStatsV1",defaultClubStats(DEFAULT_CLUBS));
   const [scores,setScores]=useStoredState("golfScoresV3",Array.from({length:18},()=>({strokes:"",putts:"",penalty:""})));
   const [shots,setShots]=useStoredState("golfShotsV3",Array.from({length:18},()=>[]));
   const [customCourses,setCustomCourses]=useStoredState("golfCustomCoursesV3",[]);
@@ -131,13 +132,13 @@ export default function Page(){
       <section className="view">
         {view==="home"&&<Home round={round} course={course} totalScore={totalScore} profile={profile} setView={setView}/>}
         {view==="schedule"&&<Schedule round={round} setRound={setRound}/>}
-        {view==="caddie"&&<CaddieDashboard course={course} rotation={rotation} step={step} setStep={setStep} clubs={clubs} scores={scores} shots={shots} setScoreField={setScoreField} addShot={addShot} deleteShot={deleteShot} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} memo={memo} setMemo={setMemo} setView={setView}/>}
+        {view==="caddie"&&<CaddieDashboard course={course} rotation={rotation} step={step} setStep={setStep} clubs={clubs} clubStats={clubStats} scores={scores} shots={shots} setScoreField={setScoreField} addShot={addShot} deleteShot={deleteShot} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} memo={memo} setMemo={setMemo} setView={setView}/>}
         {view==="score"&&<Score scores={scores} setScoreField={setScoreField} shots={shots}/>}
         {view==="courses"&&<Courses allCourses={[...builtInCourses,...customCourses]} customCourses={customCourses} addCourse={addCourse} setCustomCourses={setCustomCourses} courseId={courseId} setCourseId={setCourseId} course={course} rotation={rotation} updateCustomHole={updateCustomHole} setStep={setStep}/>}
         {view==="swing"&&<Swing/>}
         {view==="shortgame"&&<ShortGameAcademy/>}
         {view==="practice"&&<Practice items={practice} setItems={setPractice}/>}
-        {view==="equipment"&&<Equipment clubs={clubs} setClubs={setClubs}/>}
+        {view==="equipment"&&<Equipment clubs={clubs} setClubs={setClubs} clubStats={clubStats} setClubStats={setClubStats}/>}
         {view==="weather"&&<Weather value={weather} setValue={setWeather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather}/>}
         {view==="settings"&&<Settings exportData={exportData} importData={importData} reset={()=>{if(confirm("저장 데이터를 초기화할까요?")){localStorage.clear();location.reload()}}}/>}
       </section>
@@ -145,7 +146,7 @@ export default function Page(){
   </div>
 }
 
-function CaddieDashboard({course,rotation,step,setStep,clubs,scores,shots,setScoreField,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,memo,setMemo,setView}){
+function CaddieDashboard({course,rotation,step,setStep,clubs,clubStats,scores,shots,setScoreField,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,memo,setMemo,setView}){
   const [mode,setMode]=useState("live");
   const [selected,setSelected]=useState({0:0,1:0});
   const [panelTabs,setPanelTabs]=useState({0:"info",1:"info"});
@@ -182,7 +183,7 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,scores,shots,setSco
       {names.map((name,ci)=>{
         const hi=selected[ci]||0,hole=course.courses?.[name]?.[hi];
         const index=currentStepFor(ci,hi);
-        return <CoursePanel key={name} courseName={name} courseIndex={ci} hole={hole} holeIndex={hi} panelTab={panelTabs[ci]} setPanelTab={t=>setPanelTabs(p=>({...p,[ci]:t}))} clubs={clubs} score={scores[index]} setScore={(k,v)=>setScoreField(index,k,v)} shots={shots[index]||[]} addShot={s=>addShot(index,s)} deleteShot={id=>deleteShot(index,id)} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} onScore={()=>{setStep(index);setPanelTabs(p=>({...p,[ci]:"score"}))}} onNext={()=>nextPanel(ci)}/>;
+        return <CoursePanel key={name} courseName={name} courseIndex={ci} hole={hole} holeIndex={hi} panelTab={panelTabs[ci]} setPanelTab={t=>setPanelTabs(p=>({...p,[ci]:t}))} clubs={clubs} clubStats={clubStats} score={scores[index]} setScore={(k,v)=>setScoreField(index,k,v)} shots={shots[index]||[]} addShot={s=>addShot(index,s)} deleteShot={id=>deleteShot(index,id)} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} fetchLiveWeather={fetchLiveWeather} onScore={()=>{setStep(index);setPanelTabs(p=>({...p,[ci]:"score"}))}} onNext={()=>nextPanel(ci)}/>;
       })}
     </div>}
 
@@ -198,7 +199,7 @@ function CaddieDashboard({course,rotation,step,setStep,clubs,scores,shots,setSco
   </div>
 }
 
-function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab,clubs,score,setScore,shots,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,onScore,onNext}){
+function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab,clubs,clubStats,score,setScore,shots,addShot,deleteShot,profile,weather,location,gpsStatus,requestLocation,fetchLiveWeather,onScore,onNext}){
   if(!hole)return <div className="coursePanel">데이터 없음</div>;
   const target=hole.greenLat&&hole.greenLng?{lat:Number(hole.greenLat),lng:Number(hole.greenLng)}:null;
   const gpsRemain=distanceMeters(location,target),shotBearing=bearing(location,target),autoRelation=windRelation(weather.windDeg,shotBearing);
@@ -208,7 +209,7 @@ function CoursePanel({courseName,courseIndex,hole,holeIndex,panelTab,setPanelTab
   const [shotClub,setShotClub]=useState("Driver"),[shotDist,setShotDist]=useState(""),[miss,setMiss]=useState("정타"),[fullMap,setFullMap]=useState(false),[photo,setPhoto]=useState("");
   const [trouble,setTrouble]=useState("fairway"),[shortDistance,setShortDistance]=useState(20);
   const [hazardFront,setHazardFront]=useState(150),[hazardWidth,setHazardWidth]=useState(15),[afterRisk,setAfterRisk]=useState("none");
-  const strategy=strategyOptions({clubs,remaining:remain,hazard:{front:hazardFront,width:hazardWidth},downstreamRisk:afterRisk,missBias:profile.bias});
+  const strategy=strategyOptions({clubs,clubStats,remaining:remain,hazard:{front:hazardFront,width:hazardWidth},downstreamRisk:afterRisk,missBias:profile.bias});
   const shortAdvice=getShortGameAdvice(shortDistance,trouble,"56°");
   const color=courseIndex===0?"blue":"orange";
   return <article className={"coursePanel "+color}>
@@ -296,6 +297,6 @@ function Courses({allCourses,customCourses,addCourse,setCustomCourses,courseId,s
 }
 function Swing(){const[src,setSrc]=useState("");return <div className="panel"><h2>스윙 분석</h2><input type="file" accept="video/*,image/*" onChange={e=>{const f=e.target.files?.[0];if(f)setSrc(URL.createObjectURL(f))}}/>{src&&<video className="preview" src={src} controls/>}<p className="warn">업로드·재생 기능까지 구현되어 있습니다. 실제 자세추정 AI는 별도 모델 연결 단계입니다.</p></div>}
 function Practice({items,setItems}){const[text,setText]=useState("");return <div className="panel"><h2>연습/코칭</h2><div className="inline"><input value={text} onChange={e=>setText(e.target.value)} placeholder="예: 드라이버 20구 우측 미스 체크"/><button className="primary" onClick={()=>{if(text.trim()){setItems([...items,{id:Date.now(),text,done:false}]);setText("")}}}>추가</button></div>{items.map(x=><label className="task" key={x.id}><input type="checkbox" checked={x.done} onChange={()=>setItems(items.map(y=>y.id===x.id?{...y,done:!y.done}:y))}/>{x.text}</label>)}</div>}
-function Equipment({clubs,setClubs}){return <div className="panel"><h2>장비/클럽</h2><div className="clubgrid">{Object.entries(clubs).map(([k,v])=><label key={k}>{k}<input aria-label={k} type="number" value={v} onChange={e=>setClubs({...clubs,[k]:Number(e.target.value)||0})}/><span>m</span></label>)}</div><p className="ok">거리 입력 즉시 AI 캐디 추천과 랜딩존에 반영됩니다.</p></div>}
+function Equipment({clubs,setClubs,clubStats,setClubStats}){const update=(k,key,val)=>setClubStats({...clubStats,[k]:{...(clubStats[k]||{}),[key]:Number(val)||0}});return <div className="panel"><h2>장비/클럽 · 개인 샷 프로필</h2><p className="ok">최고거리가 아니라 반복 가능한 캐리·총거리·좌우 분산·성공률을 입력하세요. AI 캐디가 안전 공략에 직접 사용합니다.</p><div className="clubgrid">{Object.entries(clubs).map(([k,v])=>{const x=clubStats[k]||{};return <div className="card" key={k}><b>{k}</b><label>기존 평균<input aria-label={k} type="number" value={v} onChange={e=>setClubs({...clubs,[k]:Number(e.target.value)||0})}/></label><label>캐리(m)<input aria-label={k+" 캐리"} type="number" value={x.carry??""} onChange={e=>update(k,"carry",e.target.value)}/></label><label>총거리(m)<input aria-label={k+" 총거리"} type="number" value={x.total??v} onChange={e=>update(k,"total",e.target.value)}/></label><label>좌우 분산(m)<input aria-label={k+" 분산"} type="number" value={x.dispersion??""} onChange={e=>update(k,"dispersion",e.target.value)}/></label><label>성공률(%)<input aria-label={k+" 성공률"} type="number" min="0" max="100" value={x.success??75} onChange={e=>update(k,"success",e.target.value)}/></label></div>})}</div><p className="warn">표본이 쌓이면 연습·라운드 기록에서 이 값을 자동 계산하는 단계로 확장합니다.</p></div>}
 function Weather({value,setValue,location,gpsStatus,requestLocation,fetchLiveWeather}){return <div className="panel"><h2>날씨/바람</h2><div className="liveweather"><button className="primary" onClick={()=>requestLocation()}>현재 GPS 받기</button><button className="primary" onClick={()=>fetchLiveWeather()}>GPS로 실시간 날씨 갱신</button><span>{gpsStatus}</span></div>{location&&<p>현재 위치: {location.lat.toFixed(6)}, {location.lng.toFixed(6)} · 정확도 약 {location.accuracy}m</p>}<div className="formgrid"><label>기온<input type="number" value={value.temp} onChange={e=>setValue({...value,temp:Number(e.target.value),source:"수동"})}/></label><label>풍속 m/s<input aria-label="풍속 m/s" type="number" value={value.wind} onChange={e=>setValue({...value,wind:Number(e.target.value),source:"수동"})}/></label><label>풍향(도)<input type="number" value={value.windDeg??""} onChange={e=>setValue({...value,windDeg:e.target.value===""?null:Number(e.target.value),source:"수동"})}/></label><label>샷 대비 바람<select aria-label="샷 대비 바람" value={value.relation} onChange={e=>setValue({...value,relation:e.target.value})}>{RELATIONS.map(x=><option key={x}>{x}</option>)}</select></label></div><p><b>{value.source}</b> · {value.temp}℃ · {compass(value.windDeg)}풍 {value.wind}m/s</p></div>}
 function Settings({exportData,importData,reset}){return <div className="panel"><h2>설정</h2><div className="settings"><button onClick={exportData}>내 데이터 JSON 백업</button><label className="filebtn">JSON 복원<input type="file" accept=".json" onChange={e=>e.target.files?.[0]&&importData(e.target.files[0])}/></label><button className="danger" onClick={reset}>로컬 데이터 초기화</button></div></div>}
