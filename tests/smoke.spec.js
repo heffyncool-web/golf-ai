@@ -491,3 +491,12 @@ test("download-first course mode is available before field GPS", async ({ page }
  await expect(first.getByLabel("코스 데이터 파일")).toBeVisible();
  await expect(first.getByText(/2단계 · 현장 GPS 보정/)).toBeVisible();
 });
+
+test("course overlay first view avoids pretending blurry imagery is verified geometry", async ({ page }) => {
+ await page.reload();
+ const first=page.locator(".coursePanel").first();
+ await expect(first.getByText(/코스 데이터 불러오기 전|다운로드 코스 형상 적용됨/)).toBeVisible();
+ await first.getByRole("button",{name:"거리 측정"}).click();
+ await expect(first.getByRole("button",{name:"위성지도 보기"})).toBeVisible();
+ await expect(first.getByRole("button",{name:"일반지도 보기"})).toBeVisible();
+});

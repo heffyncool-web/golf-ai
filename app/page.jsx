@@ -276,7 +276,7 @@ function CoursePanel({courseName,courseIndex,courseCenter,hole,holeIndex,panelTa
   return <article className={"coursePanel "+color}>
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{dailyTeeToGreen!=null?dailyTeeToGreen:hole.distance}m{dailyTeeToGreen!=null?" · 오늘 티박스":""}</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
-      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} location={location} target={target} points={displayPoints} shots={shots} areas={displayAreas} courseCenter={courseCenter}/>
+      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} location={location} target={target} points={displayPoints} shots={shots} areas={displayAreas} courseCenter={courseCenter} hasDownloadedCourse={Boolean(downloadedCourse)}/>
       <div className="holeDetails">
         <div className="innerTabs">
           <button className={panelTab==="info"?"on":""} onClick={()=>setPanelTab("info")}>홀 정보</button>
@@ -318,12 +318,12 @@ function CoursePanel({courseName,courseIndex,courseCenter,hole,holeIndex,panelTa
   </article>
 }
 
-function VisualCourseMap({hole,courseName,location,target,points,shots,areas,courseCenter}){
-  const verified=Boolean(location||target);
+function VisualCourseMap({hole,courseName,location,target,points,shots,areas,courseCenter,downloadedCourse}){
+  const connected=Boolean(location||target);
   return <div className="visualMap liveVisualMap">
     <LiveCourseMap location={location} target={target} points={points} shots={shots} areas={areas} fallbackCenter={courseCenter} compact showToolbar={false}/>
     {(hole.hazards||[]).slice(0,3).map((h,i)=><span className={"hazardLabel h"+i} key={h}>{h}</span>)}
-    <span className={"conceptBadge satelliteBadge "+(verified?"verified":"pending")}>{verified?"GPS/목표 위치 연결됨":"실제 위성지도 · 홀 좌표 검증 전"}</span>
+    <span className={"conceptBadge satelliteBadge "+(connected?"verified":"pending")}>{downloadedCourse?"다운로드 코스 형상 적용됨":connected?"GPS/목표 위치 연결됨 · 코스 형상 보정 중":"코스 데이터 불러오기 전 · 일반지도 우선"}</span>
   </div>
 }
 
