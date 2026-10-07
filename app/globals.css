@@ -69,3 +69,11 @@
 .confidenceBox{border-left:4px solid #d69a13}.confidenceBox.높음{border-left-color:#168a57;background:#f1fbf6}.confidenceBox.중간{border-left-color:#2e78bd;background:#f3f8fd}.confidenceBox.기초{border-left-color:#d69a13;background:#fff9ed}
 
 .dailyTeeBox{border-color:#d8b34a;background:#fffaf0}.dailyTeeBox b{color:#8b5a00}
+
+/* Harness regression fix: full-width interactive map instead of 40%-width legacy panel */
+.panelCore:has(.liveVisualMap){display:block;min-height:0}
+.panelCore:has(.liveVisualMap)>.liveVisualMap{width:100%;height:clamp(390px,42vw,650px);min-height:390px;display:block;position:relative}
+.panelCore:has(.liveVisualMap)>.holeDetails{width:100%;min-width:0}
+.liveVisualMap .liveMapShell,.liveVisualMap .liveMapCanvas,.liveVisualMap .maplibregl-map{width:100%!important;height:100%!important;min-height:0!important}
+@media(max-width:900px){.panelCore:has(.liveVisualMap)>.liveVisualMap{height:460px;min-height:380px}}
+@media(max-width:560px){.panelCore:has(.liveVisualMap)>.liveVisualMap{height:390px;min-height:350px}}
