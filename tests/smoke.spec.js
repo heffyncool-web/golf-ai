@@ -242,3 +242,13 @@ test("Golfzon CSV file upload imports shots and learns profile", async ({ page }
  await expect(page.getByText(/golfzon.csv에서 3개 샷을 가져와 자동 학습했습니다/)).toBeVisible();
  await expect(page.locator(".card").filter({hasText:"PW · 3샷"})).toBeVisible();
 });
+
+
+test("adaptive practice loop creates baseline mission and relearns shot by shot", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"연습/코칭",exact:true}).click();
+ await expect(page.getByText("PW 10m 기준 만들기")).toBeVisible();
+ await page.locator(".card").filter({hasText:"PW 10m 기준 만들기"}).getByRole("button",{name:"이 미션 연습"}).click();
+ for(const d of ["9","10","11"]){await page.getByLabel("연습 실제 거리").fill(d);await page.getByLabel("연습 결과").selectOption("정타");await page.getByRole("button",{name:"1구 기록·재학습"}).click();}
+ await expect(page.locator(".card").filter({hasText:/PW 10m · 보통 잔디/})).toContainText("3구");
+ await expect(page.locator(".card").filter({hasText:/PW 10m · 보통 잔디/})).toContainText("성공률 100%");
+});
