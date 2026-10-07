@@ -1,5 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";\nimport {lessonScript,speakLesson,videoStoryboard} from "./mediaLessonEngine";
+import { useMemo, useState } from "react";
+import {lessonScript,speakLesson,videoStoryboard} from "./mediaLessonEngine";
 
 const LIES=[
   {id:"fairway",label:"보통 잔디"},{id:"tight",label:"잔디 거의 없음/맨땅"},{id:"rough",label:"깊은 러프"},
@@ -34,7 +35,8 @@ export function getShortGameAdvice(distance,lie,club="56°"){ return advice(Numb
 export default function ShortGameAcademy(){
   const [distance,setDistance]=useState(10),[lie,setLie]=useState("fairway"),[club,setClub]=useState("56°");
   const [tab,setTab]=useState("situation"),[records,setRecords]=useState([]);
-  const a=useMemo(()=>advice(Number(distance),lie,club),[distance,lie,club]);\n  const lesson=lessonScript({title:`${distance}미터 어프로치 레슨`,situation:LIES.find(x=>x.id===lie)?.label,club:a.club,setup:a.setup,target:a.target,feel:a.feel,avoid:a.avoid,drill:"같은 거리 5구를 기록하고 캐리와 총거리를 비교하세요."}),storyboard=videoStoryboard({situation:LIES.find(x=>x.id===lie)?.label,club:a.club,setup:a.setup,target:a.target,feel:a.feel,avoid:a.avoid,drill:"5구 반복 후 결과를 기록"});
+  const a=useMemo(()=>advice(Number(distance),lie,club),[distance,lie,club]);
+  const lesson=lessonScript({title:`${distance}미터 어프로치 레슨`,situation:LIES.find(x=>x.id===lie)?.label,club:a.club,setup:a.setup,target:a.target,feel:a.feel,avoid:a.avoid,drill:"같은 거리 5구를 기록하고 캐리와 총거리를 비교하세요."}),storyboard=videoStoryboard({situation:LIES.find(x=>x.id===lie)?.label,club:a.club,setup:a.setup,target:a.target,feel:a.feel,avoid:a.avoid,drill:"5구 반복 후 결과를 기록"});
   const addRecord=()=>setRecords(r=>[{id:Date.now(),distance:Number(distance),lie,club:a.club,result:"성공"},...r].slice(0,30));
   return <div className="panel">
     <h2>상황별 공략 · 어프로치 아카데미</h2>
