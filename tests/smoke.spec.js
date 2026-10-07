@@ -385,3 +385,16 @@ test("field GPS supports green front center back custom target and two-point mea
  await expect(first.getByText(/A↔B 0m/)).toBeVisible();
  await expect(first.getByRole("button",{name:"현장 GPS 포인트 초기화"})).toBeVisible();
 });
+
+
+test("round scorecard shows GPS risk review metrics", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"스코어카드",exact:true}).click();
+ await expect(page.getByText("GPS 기록률")).toBeVisible();
+ await expect(page.getByText("OB / 해저드")).toBeVisible();
+ await expect(page.getByText("퍼트 / 벌타")).toBeVisible();
+});
+
+test("default short game wedge uses 56 degree naming", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
+ await expect(page.getByText("56°",{exact:true}).first()).toBeVisible();
+});
