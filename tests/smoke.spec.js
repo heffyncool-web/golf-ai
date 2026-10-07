@@ -269,3 +269,14 @@ test("voice caddie controls are available with auto-read setting", async ({ page
  await expect(first.getByRole("button",{name:"AI 캐디 음성 정지"})).toBeVisible();
  await first.getByLabel("추천 자동 읽기").check();await expect(first.getByLabel("추천 자동 읽기")).toBeChecked();
 });
+
+
+test("camera address alignment coach exposes overlay and correction controls", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
+ const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"트러블/어프로치"}).click();
+ await expect(first.getByRole("button",{name:"정렬 카메라 시작"})).toBeVisible();
+ await expect(first.getByLabel("카메라 목표선")).toBeVisible();
+ await first.getByLabel("발끝선 각도").fill("8");
+ await expect(first.getByText("재정렬 필요").first()).toBeVisible();
+ await expect(first.getByRole("button",{name:"정렬 음성 피드백"})).toBeVisible();
+});
