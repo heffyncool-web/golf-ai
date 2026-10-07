@@ -3,11 +3,11 @@ export function learnClubStats(clubs,currentStats,shots){
  const next={...currentStats};
  for(const club of Object.keys(clubs)){
   const rows=flat.filter(s=>s.club===club); if(rows.length<3)continue;
-  const avg=a=>a.reduce((n,v)=>n+v,0)/a.length, totals=rows.map(s=>Number(s.distance));
+  const avg=a=>a.reduce((n,v)=>n+v,0)/a.length,median=a=>{const v=[...a].sort((x,y)=>x-y),m=Math.floor(v.length/2);return v.length%2?v[m]:(v[m-1]+v[m])/2}, totals=rows.map(s=>Number(s.distance));
   const carries=rows.map(s=>Number(s.carry||s.distance*.9));
   const lateral=rows.map(s=>Math.abs(Number(s.lateral||(["좌","우"].includes(s.miss)?12:0))));
-  const ok=rows.filter(s=>!["OB","해저드","벙커"].includes(s.miss)).length;
-  next[club]={...(next[club]||{}),carry:Math.round(avg(carries)),total:Math.round(avg(totals)),dispersion:Math.round(avg(lateral)),success:Math.round(ok/rows.length*100),samples:rows.length,learnedAt:new Date().toISOString()};
+  const ok=rows.filter(s=>s.success===true||(!["OB","해저드","hazard","벙커","bunker","좌","우","짧음","김"].includes(s.miss)&&s.success!==false)).length;
+  next[club]={...(next[club]||{}),carry:Math.round(median(carries)),total:Math.round(median(totals)),dispersion:Math.round(avg(lateral)),success:Math.round(ok/rows.length*100),samples:rows.length,confidence:rows.length>=20?"높음":rows.length>=8?"보통":"초기",learnedAt:new Date().toISOString()};
  }
  return next;
 }
