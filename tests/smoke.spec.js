@@ -234,3 +234,11 @@ test("Golfzon pasted shots auto-learn personal club profile", async ({ page }) =
  await expect(page.locator(".card").filter({hasText:"7I · 4샷"})).toBeVisible();
  await expect(page.getByLabel("7I 캐리")).toHaveValue("134");
 });
+
+
+test("Golfzon CSV file upload imports shots and learns profile", async ({ page }) => {
+ await page.reload();await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
+ await page.getByLabel("Golfzon 파일 선택").setInputFiles({name:"golfzon.csv",mimeType:"text/csv",buffer:Buffer.from("PW,100,90,3,정타\nPW,102,92,-4,정타\nPW,98,89,5,정타")});
+ await expect(page.getByText(/golfzon.csv에서 3개 샷을 가져와 자동 학습했습니다/)).toBeVisible();
+ await expect(page.locator(".card").filter({hasText:"PW · 3샷"})).toBeVisible();
+});
