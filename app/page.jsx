@@ -299,7 +299,7 @@ function CoursePanel({courseName,courseIndex,courseId,courseCenter,hole,holeInde
   return <article className={"coursePanel "+color}>
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{dailyTeeToGreen!=null?dailyTeeToGreen:hole.distance}m{dailyTeeToGreen!=null?" · 오늘 티박스":""}</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
-      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} location={location} target={target} points={displayPoints} shots={shots} areas={displayAreas} courseCenter={courseCenter} downloadedCourse={Boolean(downloadedCourse)}/>
+      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} downloadedCourse={Boolean(downloadedCourse)}/>
       <div className="autoCourseImport"><button type="button" disabled={osmLoading} onClick={autoLoadCourse}>{osmLoading?"코스 데이터 검색 중…":"오픈 코스 데이터 자동 불러오기"}</button><small role="status">{osmStatus||downloadedCourse?.attribution||"OSM 오픈 데이터 기반 · 홀별 정확도는 현장 확인 필요"}</small></div><div className="holeDetails">
         <div className="innerTabs">
           <button className={panelTab==="info"?"on":""} onClick={()=>setPanelTab("info")}>홀 정보</button>
@@ -341,12 +341,25 @@ function CoursePanel({courseName,courseIndex,courseId,courseCenter,hole,holeInde
   </article>
 }
 
-function VisualCourseMap({hole,courseName,location,target,points,shots,areas,courseCenter,downloadedCourse}){
-  const connected=Boolean(location||target);
-  return <div className="visualMap liveVisualMap">
-    <LiveCourseMap location={location} target={target} points={points} shots={shots} areas={areas} fallbackCenter={courseCenter} compact showToolbar={false}/>
+function VisualCourseMap({hole,courseName,profile,driver,downloadedCourse}){
+  const isLake=/lake/i.test(courseName);
+  const image=isLake?SATELLITE_MAPS.lake:SATELLITE_MAPS.mountain;
+  const aimX=profile?.bias==="좌중앙"?96:profile?.bias==="우중앙"?124:110;
+  return <div className="visualMap satelliteMap mainSatelliteMap" style={{backgroundImage:`linear-gradient(180deg,rgba(0,25,12,.03),rgba(0,25,12,.18)),url(${image})`}}>
+    <svg className="mapOverlay" viewBox="0 0 220 430" role="img" aria-label={courseName+" "+hole.hole+"홀 위성형 공략도"}>
+      <defs><filter id={"g"+courseName+hole.hole}><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <path d="M110 388 C108 335 106 300 108 258 C111 215 102 170 108 126 C111 100 109 74 110 48" fill="none" stroke="#50e8ff" strokeWidth="3" strokeDasharray="7 7" filter={"url(#g"+courseName+hole.hole+")"}/>
+      <path d={`M110 388 Q${aimX} 280 ${aimX} 186`} fill="none" stroke="#fff" strokeWidth="2.2" opacity=".95"/>
+      <circle cx="110" cy="388" r="9" fill="#ef233c" stroke="#fff" strokeWidth="3"/>
+      <circle cx="110" cy="365" r="8" fill="#fff" stroke="#fff" strokeWidth="2"/>
+      <circle cx="110" cy="342" r="8" fill="#2e79ff" stroke="#fff" strokeWidth="2"/>
+      <circle cx="110" cy="319" r="8" fill="#1b1b1b" stroke="#fff" strokeWidth="2"/>
+      <circle cx={aimX} cy="185" r="7" fill="#fff" stroke="#128cf0" strokeWidth="3"/>
+      <text x="121" y="245" fill="#fff" fontSize="17" fontWeight="900" stroke="#1e4024" strokeWidth=".8">150m</text>
+      <text x="121" y="188" fill="#fff" fontSize="17" fontWeight="900" stroke="#1e4024" strokeWidth=".8">{driver||220}m</text>
+    </svg>
     {(hole.hazards||[]).slice(0,3).map((h,i)=><span className={"hazardLabel h"+i} key={h}>{h}</span>)}
-    <span className={"conceptBadge satelliteBadge "+(connected?"verified":"pending")}>{downloadedCourse?"다운로드 코스 형상 적용됨":connected?"GPS/목표 위치 연결됨 · 코스 형상 보정 중":"코스 데이터 불러오기 전 · 일반지도 우선"}</span>
+    <span className="conceptBadge satelliteBadge">{downloadedCourse?"코스 데이터 연결됨 · 위성형 공략도":"위성형 공략도 · 홀 정보 우선 표시"}</span>
   </div>
 }
 
