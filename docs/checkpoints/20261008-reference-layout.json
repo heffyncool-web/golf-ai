@@ -1,0 +1,29 @@
+{
+  "reference": "48816.png — user-approved initial layout and pre-round caddie goal",
+  "previousRemoteCommit": "da934e8c8fe1eda2f2cd0ebbf652fc994d4eaf69",
+  "localRollbackTag": "checkpoint/pre-reference-layout-20261008",
+  "changes": [
+    "Desktop dual course boards: satellite beside analysis",
+    "Mobile current-hole-first layout",
+    "Tee preview / current GPS strategy switch",
+    "Projected tee shot and second shot using personal carry and dispersion",
+    "Georeferenced hazard labels with start/end distances",
+    "Unknown tee distances and green slopes remain unregistered",
+    "Existing score, club, academy, learning and GPS controls retained"
+  ],
+  "regression": {
+    "startTime": "2026-10-08T11:29:30.771Z",
+    "duration": 272392.152,
+    "expected": 106,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "p0Overall": "NOT_COMPLETE",
+  "remaining": [
+    "Real verified hole geometry",
+    "Physical field GPS validation",
+    "Protected deployed UI access denied 403 on existing connection"
+  ],
+  "deployment": "Same draft PR branch; GitHub/Vercel automatic preview, production unchanged"
+}

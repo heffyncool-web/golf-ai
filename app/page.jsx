@@ -14,6 +14,8 @@ import CameraAlignmentCoach from "./CameraAlignmentCoach";
 import {shotPathSummary,roundReview} from "./roundReview";
 import LiveCourseMap from "./LiveCourseMap";
 import FieldCaddie from "./FieldCaddie";
+import HoleBriefing from "./HoleBriefing";
+import {caddiePlans,courseFeatures} from "./holeCaddie";
 import {emptyCourseAreas,addAreaPoint,positionRisk} from "./courseAreas";
 import {effectiveDistance,targetBias} from "./ballistics";
 import {riskMissionFromAreas} from "./courseLearning";
@@ -245,6 +247,7 @@ function CoursePanel({courseName,courseIndex,courseId,courseCenter,active,hole,h
   if(!hole)return <div className="coursePanel">데이터 없음</div>;
   const targetKey=`golfTarget:${courseId||"legacy"}:${courseName}:${hole.hole}`;
   const [savedTarget,setSavedTarget]=useState(null);
+  const [preRound,setPreRound]=useState(true);
   const [dailyTee,setDailyTee]=useState(null);
   const [downloadedCourse,setDownloadedCourse]=useState(null);const [osmStatus,setOsmStatus]=useState("");const [osmLoading,setOsmLoading]=useState(false);
   const courseFileRef=useRef(null);
@@ -296,14 +299,19 @@ function CoursePanel({courseName,courseIndex,courseId,courseCenter,active,hole,h
   const voiceText=[`${shortDistance}미터 남았습니다.`,personalChoice?.text||"",`추천 클럽은 ${personalChoice?.best?.club||shortAdvice.club}입니다.`,shortAdvice.title,shortAdvice.setup,shortAdvice.feel,`목표는 ${shortAdvice.target}`,`주의할 점은 ${shortAdvice.avoid}`,targetBearing!=null?alignmentLesson(targetBearing,deviceHeading):""].filter(Boolean).join(" ");
   function speakAdvice(){if(typeof window==="undefined"||!("speechSynthesis" in window)){setVoiceStatus("이 브라우저는 음성 읽기를 지원하지 않습니다.");return}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(voiceText);u.lang="ko-KR";u.rate=.92;u.pitch=1;u.onstart=()=>setVoiceStatus("읽는 중");u.onend=()=>setVoiceStatus("완료");u.onerror=()=>setVoiceStatus("음성 재생 실패");window.speechSynthesis.speak(u)}
   function stopVoice(){if(typeof window!=="undefined"&&"speechSynthesis" in window)window.speechSynthesis.cancel();setVoiceStatus("정지")}
+  const summaryOrigin=preRound?displayPoints.tee:(location||displayPoints.tee);
+  const summaryPlans=caddiePlans({origin:summaryOrigin,target,points:displayPoints,features:courseFeatures(displayAreas,downloadedCourse?.features||[]),clubs,stats:clubStats,wind:weather.wind,relation:weather.relation,missBias:profile.right>profile.left?"우":profile.left>profile.right?"좌":"중앙"});
+  const summaryPlan=summaryPlans.find(p=>p.mode==="STANDARD");
+  const nextPlan=summaryPlan?caddiePlans({origin:summaryPlan.finish,target,points:displayPoints,features:courseFeatures(displayAreas,downloadedCourse?.features||[]),clubs,stats:clubStats,wind:weather.wind,relation:weather.relation}).find(p=>p.mode==="STANDARD"):null;
   const pathReview=shotPathSummary(shots);
   const color=courseIndex===0?"blue":"orange";
   return <article data-active={active} className={"coursePanel "+color}>
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{dailyTeeToGreen!=null?dailyTeeToGreen:hole.distance}m{dailyTeeToGreen!=null?" · 오늘 티박스":""}</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
-      <FieldCaddie showGpsButtons={panelTab!=="distance"} location={location} target={target} points={displayPoints} areas={displayAreas} features={downloadedCourse?.features||[]} clubs={clubs} stats={clubStats} weather={weather} elevation={elevationDelta} missBias={profile.right>profile.left?"우":profile.left>profile.right?"좌":"중앙"} courseCenter={courseCenter} holeKey={targetKey} shots={shots} requestLocation={requestLocation} startLiveLocation={startLiveLocation} gpsStatus={gpsStatus}/>
+      <FieldCaddie preview={preRound} setPreview={setPreRound} showGpsButtons={panelTab!=="distance"} location={location} target={target} points={displayPoints} areas={displayAreas} features={downloadedCourse?.features||[]} clubs={clubs} stats={clubStats} weather={weather} elevation={elevationDelta} missBias={profile.right>profile.left?"우":profile.left>profile.right?"좌":"중앙"} courseCenter={courseCenter} holeKey={targetKey} shots={shots} requestLocation={requestLocation} startLiveLocation={startLiveLocation} gpsStatus={gpsStatus}/>
+      <div className="holeDetails">
       <p className="geometryState">{downloadedCourse?"다운로드 코스 형상 적용됨 · 현장 확인 필요":"코스 데이터 불러오기 전 · 홀 좌표 미등록"}</p>
-      <div className="autoCourseImport"><button type="button" disabled={osmLoading} onClick={autoLoadCourse}>{osmLoading?"코스 데이터 검색 중…":"오픈 코스 데이터 자동 불러오기"}</button><small role="status">{osmStatus||downloadedCourse?.attribution||"OSM 오픈 데이터 기반 · 홀별 정확도는 현장 확인 필요"}</small></div><div className="holeDetails">
+      <div className="autoCourseImport"><button type="button" disabled={osmLoading} onClick={autoLoadCourse}>{osmLoading?"코스 데이터 검색 중…":"오픈 코스 데이터 자동 불러오기"}</button><small role="status">{osmStatus||downloadedCourse?.attribution||"OSM 오픈 데이터 기반 · 홀별 정확도는 현장 확인 필요"}</small></div>
         <div className="innerTabs">
           <button className={panelTab==="info"?"on":""} onClick={()=>setPanelTab("info")}>홀 정보</button>
           <button className={panelTab==="guide"?"on":""} onClick={()=>setPanelTab("guide")}>공략 가이드</button>
@@ -314,11 +322,8 @@ function CoursePanel({courseName,courseIndex,courseId,courseCenter,active,hole,h
         </div>
 
         {panelTab==="info"&&<>
-          <div className="infoSplit"><div><h4>기본 정보</h4><dl><dt>Par</dt><dd>{hole.par}</dd><dt>블랙</dt><dd>{hole.distance}m</dd><dt>화이트</dt><dd>{Math.max(0,hole.distance-18)}m</dd><dt>블루</dt><dd>{Math.max(0,hole.distance-38)}m</dd><dt>레이디</dt><dd>{Math.max(0,hole.distance-58)}m</dd></dl></div><GreenMini courseIndex={courseIndex}/></div>
+          <HoleBriefing hole={hole} points={displayPoints} areas={displayAreas} features={downloadedCourse?.features||[]} clubs={clubs} stats={clubStats} weather={weather} location={location} preview={preRound} missBias={profile.right>profile.left?"우":profile.left>profile.right?"좌":"중앙"}/>
           <StrategyBox title="홀 특징 및 공략 포인트" icon="●"><p>{hole.strategy}</p><div className="chips">{(hole.hazards||[]).map(x=><span key={x}>{x}</span>)}</div></StrategyBox>
-          <StrategyBox title={"티샷 공략 (추천 클럽: "+(hole.par===3?nearestClub(clubs,hole.distance):"드라이버 또는 3W")+")"} icon="⚑"><p>목표지점: <b>{profile.bias}</b> · 최근 미스 방향을 반영해 안전 폭을 우선합니다.</p><p>예상 낙하지점 약 {driver}m · 위험구역과 겹치면 한 클럽 짧게 선택합니다.</p></StrategyBox>
-          <StrategyBox title="세컨드 샷 공략" icon="✓"><p>예상 잔여 {remain}m · 추천 {second}. 그린 중앙과 넓은 면을 우선합니다.</p></StrategyBox>
-          <StrategyBox title="그린 공략" icon="⚑"><p>핀보다 그린 중앙을 기본 목표로 하고 당일 경사와 핀 위치를 최종 확인합니다.</p></StrategyBox>
         </>}
 
         {panelTab==="guide"&&<div className="detailPanel"><h4>AI 공략 가이드</h4><p><b>1.</b> 티샷 목표는 {profile.bias}. 좌 미스 {profile.left}, 우 미스 {profile.right} 기록을 반영합니다.</p><p><b>2.</b> 남은거리 {remain}m에서 추천 클럽은 {second}입니다.</p><p><b>3.</b> 현재 바람: {compass(weather.windDeg)} {weather.wind}m/s · {relation}</p><p><b>4.</b> 위험요소: {(hole.hazards||[]).join(", ")||"세부 위험 확인"}</p>
@@ -338,7 +343,7 @@ function CoursePanel({courseName,courseIndex,courseId,courseCenter,active,hole,h
         {panelTab==="score"&&<div className="detailPanel"><h4>스코어 기록</h4><div className="scoreInputs"><label>타수<input aria-label={courseName+" 타수"} type="number" value={score.strokes} onChange={e=>setScore("strokes",e.target.value)}/></label><label>퍼트<input type="number" value={score.putts} onChange={e=>setScore("putts",e.target.value)}/></label><label>벌타<input type="number" value={score.penalty} onChange={e=>setScore("penalty",e.target.value)}/></label></div><h4>샷 기록</h4><div className="shotQuick"><select value={shotClub} onChange={e=>setShotClub(e.target.value)}>{Object.keys(clubs).map(c=><option key={c}>{c}</option>)}</select><input aria-label={courseName+" 샷 거리"} type="number" value={shotDist} onChange={e=>setShotDist(e.target.value)} placeholder="거리"/><select value={miss} onChange={e=>setMiss(e.target.value)}>{MISSES.map(m=><option key={m}>{m}</option>)}</select><button onClick={()=>{addShot({club:shotClub,distance:Number(shotDist)||0,miss,at:new Date().toISOString(),position:location?{lat:location.lat,lng:location.lng,accuracy:location.accuracy}:null,targetDistance:gpsRemain});setShotDist("")}}>추가</button></div><div className="inline"><button aria-label="홀 샷 복기" onClick={()=>setReview(v=>!v)}>홀 샷 복기</button><small>GPS가 연결된 상태에서 샷을 추가하면 위치도 함께 저장됩니다.</small></div>{review&&<div className="strategyBox"><h4><span>↺</span> 홀 복기</h4><p><b>GPS 기록 {pathReview.points}점</b> · 이동구간 {pathReview.legs.join(" → ")||"-"}m · 누적 {pathReview.total}m</p>{shots.length?shots.map((x,i)=><p key={x.id}><b>{i+1}타 {x.club}</b> · {x.distance||"-"}m · {x.miss} · {x.position?`GPS ${x.position.lat.toFixed(5)}, ${x.position.lng.toFixed(5)} (±${x.position.accuracy}m)`:"위치 미기록"}{x.targetDistance!=null?` · 당시 목표까지 ${x.targetDistance}m`:""}</p>):<p>기록된 샷이 없습니다.</p>}</div>}<div className="shotRows">{shots.map((s,i)=><div key={s.id}><span>{i+1}타 {s.club} · {s.distance||"-"}m · {s.miss}</span><button onClick={()=>deleteShot(s.id)}>삭제</button></div>)}</div></div>}
       </div>
     </div>
-    <div className="clubRecommend"><div className="clock">◷</div><div><b>AI 추천 클럽 (내 구질 반영)</b><div className="recGrid"><span><small>티샷</small><strong>{hole.par===3?nearestClub(clubs,hole.distance):"드라이버"} ({hole.par===3?clubs[nearestClub(clubs,hole.distance)]:driver}m)</strong></span><span><small>세컨드 (예상 {remain}m)</small><strong>{second} ({clubs[second]||"-"}m)</strong></span><span><small>어프로치</small><strong>{approach} ({clubs[approach]||"-"}m)</strong></span></div></div></div>
+    <div className="clubRecommend"><div className="clock">◷</div><div><b>{summaryPlan?"AI 추천 클럽 (내 구질 반영)":"등록 거리 기반 참고 · 지형 분석 대기"}</b><div className="recGrid"><span><small>티샷</small><strong>{(summaryPlan?.club==="Driver"?"드라이버":summaryPlan?.club)||(hole.par===3?nearestClub(clubs,hole.distance):"드라이버")} ({summaryPlan?.requiredCarry||(hole.par===3?clubs[nearestClub(clubs,hole.distance)]:driver)}m)</strong></span><span><small>세컨드 (예상 {summaryPlan?.nextDistance??remain}m)</small><strong>{nextPlan?.club||second} ({nextPlan?.requiredCarry??clubs[second]??"-"}m)</strong></span><span><small>어프로치</small><strong>{approach} ({clubs[approach]||"-"}m)</strong></span></div></div></div>
     <div className="panelActions"><button className="scoreBtn" onClick={onScore}>이 홀로 스코어 기록하기</button><button className="nextBtn" onClick={onNext}>{holeIndex===8?"이 코스 완료":"다음 홀 ("+(holeIndex+2)+"H) →"}</button></div>
     {fullMap&&<div className="mapModal" onClick={()=>setFullMap(false)}><div className="mapModalInner" onClick={e=>e.stopPropagation()}><div className="modalHead"><h3>{courseName.toUpperCase()} {hole.hole}H 전체보기</h3><button aria-label="지도 닫기" onClick={()=>setFullMap(false)}>✕</button></div><VisualCourseMap hole={hole} courseName={courseName} location={location} target={target} points={displayPoints} shots={shots} areas={displayAreas} features={downloadedCourse?.features||[]} courseCenter={courseCenter} downloadedCourse={Boolean(downloadedCourse)}/></div></div>}
   </article>

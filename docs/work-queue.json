@@ -41,6 +41,14 @@
       "dependency": "P0-03 and physical field validation"
     },
     {
+      "id": "P0-08",
+      "title": "48816.png 사전 홀 공략·위성지도/분석 병렬 구성",
+      "gate": "GREEN",
+      "state": "SOFTWARE_VERIFIED_REAL_HOLE_SIGNOFF_PENDING",
+      "tests": "106/106 desktop/mobile regression, 0 failures, 0 flaky",
+      "dependency": "Real hole geometry and protected deployment UI access for full acceptance"
+    },
+    {
       "id": "P0-06",
       "title": "실제 배포 모바일 및 새로고침 검증",
       "gate": "GREEN",
