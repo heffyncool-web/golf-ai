@@ -19,6 +19,9 @@ import HoleBriefing from "./HoleBriefing";
 import FieldValidation from "./FieldValidation";
 import CoursePackageControls, { useCoursePackage } from "./CoursePackageControls";
 import { selectPackageHole } from "./coursePackage";
+import RoundClock from "./RoundClock";
+import RoundEditor from "./RoundEditor";
+import HoleArtwork from "./HoleArtwork";
 import ReferenceHoleMap from "./ReferenceHoleMap";
 import ReferenceHoleBriefing from "./ReferenceHoleBriefing";
 import {caddiePlans,courseFeatures} from "./holeCaddie";
@@ -100,8 +103,10 @@ export default function Page(){
   const [customCourses,setCustomCourses]=useStoredState("golfCustomCoursesV6",[],normalizeArray);
   const [courseId,setCourseId]=useStoredState("golfCourseIdV6","grace-cc",v=>typeof v==="string"?v:"grace-cc");
   const [step,setStep]=useState(0);
-  const defaultRound={date:"2026-10-19",time:"13:10",players:4,fee:150000,caddie:"정규캐디"};
+  const defaultRound={date:"2026-10-19",time:"13:10",players:4,fee:150000,caddie:"정규캐디",targetScore:90};
   const [round,setRound]=useStoredState("golfRoundV6",defaultRound,normalizeObject(defaultRound));
+  const [editingRound,setEditingRound]=useState(false),[roundNotice,setRoundNotice]=useState("");
+  function saveRound(next){localStorage.setItem('golfRoundV6',JSON.stringify(next));setRound(next);setEditingRound(false);setRoundNotice('라운드 정보를 저장하고 반영했습니다.');}
   const defaultWeather={temp:22,wind:2,windDeg:null,relation:"자동",source:"수동",updatedAt:""};
   const [weather,setWeather]=useStoredState("golfWeatherV6",defaultWeather,normalizeObject(defaultWeather));
   const [location,setLocation]=useState(null);
@@ -168,7 +173,7 @@ export default function Page(){
 
     <main className="main">
       <header className="top">
-        <div className="dateBox"><strong>{round.date}</strong><b>D-12</b></div>
+        <RoundClock date={round.date}/>
         <div className="courseThumb" aria-hidden="true" style={{backgroundImage:`url(${SATELLITE_MAPS.lake})`}}/>
         <div className="title">{course.name}<small>{course.region}</small></div>
         <div className="stat">티타임<b>{round.time}</b></div>
@@ -176,12 +181,15 @@ export default function Page(){
         <div className="stat">그린피<b>{Number(round.fee).toLocaleString()}원</b></div>
         <div className="stat">캐디<b>{round.caddie}</b></div>
         <div className="weatherTop">☀️ <span>청도 날씨 (예보)<b>{weather.temp}° / 바람 {weather.wind}m/s</b></span></div>
+        <div className="stat targetScore">목표타수<b>{round.targetScore}타</b></div><button className="roundEditButton" onClick={()=>{setRoundNotice('');setEditingRound(true);}}>✎ 수정</button>
         <select aria-label="골프장 선택" value={courseId} onChange={e=>{setCourseId(e.target.value);setStep(0)}}>{[...builtInCourses,...customCourses].map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>
       </header>
 
+      {roundNotice&&<p className="roundNotice" role="status">{roundNotice}</p>}
+      {editingRound&&<div className="modalBackdrop"><div className="panel roundEditModal" role="dialog" aria-modal="true" aria-label="라운드 정보 수정" onKeyDown={e=>{if(e.key==="Escape")setEditingRound(false);}}><RoundEditor round={round} onSave={saveRound} onCancel={()=>setEditingRound(false)}/></div></div>}
       <section className="view">
         {view==="home"&&<Home round={round} course={course} totalScore={totalScore} profile={profile} setView={setView}/>}
-        {view==="schedule"&&<Schedule round={round} setRound={setRound}/>}
+        {view==="schedule"&&<Schedule round={round} setRound={setRound} onEdit={()=>setEditingRound(true)}/>}
         {view==="caddie"&&<CaddieDashboard course={course} rotation={rotation} step={step} setStep={setStep} clubs={clubs} clubStats={clubStats} shortMatrix={shortMatrix} scores={scores} shots={shots} setScoreField={setScoreField} addShot={addShot} deleteShot={deleteShot} profile={profile} weather={weather} location={location} gpsStatus={gpsStatus} requestLocation={requestLocation} startLiveLocation={startLiveLocation} stopLiveLocation={stopLiveLocation} fetchLiveWeather={fetchLiveWeather} memo={memo} setMemo={setMemo} setView={setView}/>}
         {view==="score"&&<Score scores={scores} setScoreField={setScoreField} shots={shots}/>}
         {view==="courses"&&<Courses allCourses={[...builtInCourses,...customCourses]} customCourses={customCourses} addCourse={addCourse} setCustomCourses={setCustomCourses} courseId={courseId} setCourseId={setCourseId} course={course} rotation={rotation} updateCustomHole={updateCustomHole} setStep={setStep}/>}
@@ -254,7 +262,7 @@ function CoursePanel({courseName,courseIndex,courseId,courseData,courseCenter,ac
   const targetKey=`golfTarget:${courseId||"legacy"}:${courseName}:${hole.hole}`;
   const [savedTarget,setSavedTarget]=useState(null);
   const [preRound,setPreRound]=useState(true);
-  const [liveMapRequested,setLiveMapRequested]=useState(false);
+  const [liveMapRequested,setLiveMapRequested]=useState(false),[artworkRequested,setArtworkRequested]=useState(false);
   const [dailyTee,setDailyTee]=useState(null);
   const [importedHole,setDownloadedCourse]=useState(null);
   const {value:coursePackage}=useCoursePackage(courseData);
@@ -312,14 +320,17 @@ function CoursePanel({courseName,courseIndex,courseId,courseData,courseCenter,ac
   const summaryPlans=caddiePlans({origin:summaryOrigin,target,points:displayPoints,features:courseFeatures(displayAreas,downloadedCourse?.features||[]),clubs,stats:clubStats,wind:weather.wind,relation:weather.relation,missBias:profile.right>profile.left?"우":profile.left>profile.right?"좌":"중앙"});
   const summaryPlan=summaryPlans.find(p=>p.mode==="STANDARD");
   const nextPlan=summaryPlan?caddiePlans({origin:summaryPlan.finish,target,points:displayPoints,features:courseFeatures(displayAreas,downloadedCourse?.features||[]),clubs,stats:clubStats,wind:weather.wind,relation:weather.relation}).find(p=>p.mode==="STANDARD"):null;
-  const individualPending=!displayPoints.tee&&!displayPoints.center&&!target&&!liveMapRequested;
-  const showReference=courseId==="grace-cc"&&Number(hole.hole)===1&&!displayPoints.tee&&!displayPoints.center&&!target&&!liveMapRequested;
+  const individualPending=(artworkRequested||(!displayPoints.tee&&!displayPoints.center&&!target))&&!liveMapRequested;
+  const showReference=courseId==="grace-cc"&&Number(hole.hole)===1&&(artworkRequested||(!displayPoints.tee&&!displayPoints.center&&!target))&&!liveMapRequested;
   const pathReview=shotPathSummary(shots);
   const color=courseIndex===0?"blue":"orange";
   return <article data-active={active} className={"coursePanel "+color+(showReference?" referencePanel":"")}>
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{dailyTeeToGreen!=null?dailyTeeToGreen:hole.distance}m{dailyTeeToGreen!=null?" · 오늘 티박스":""}</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
-      {showReference?<ReferenceHoleMap courseIndex={courseIndex} holeNumber={hole.hole} onExpand={()=>setFullMap(true)} onSatellite={()=>setLiveMapRequested(true)}/>:individualPending?<section className="fieldCaddie individualHolePending" aria-label="개별 홀 지도 자료 대기"><h3>{courseName.toUpperCase()} {hole.hole}H</h3><p>이 홀의 개별 공략도와 좌표 자료를 준비 중입니다.</p><p>다른 홀의 그림을 대신 표시하지 않습니다.</p><button onClick={()=>setLiveMapRequested(true)}>실제 위성·GPS 열기</button></section>:<FieldCaddie overview={COURSE_OVERVIEWS[courseId]} preview={preRound} setPreview={setPreRound} showGpsButtons={panelTab!=="distance"} location={location} target={target} points={displayPoints} areas={displayAreas} features={downloadedCourse?.features||[]} clubs={clubs} stats={clubStats} weather={weather} elevation={elevationDelta} missBias={profile.right>profile.left?"우":profile.left>profile.right?"좌":"중앙"} courseCenter={courseCenter} holeKey={targetKey} shots={shots} requestLocation={requestLocation} startLiveLocation={startLiveLocation} gpsStatus={gpsStatus}/>}
+      <div className="holeMapColumn">
+      {liveMapRequested&&<div className="mapReturnBar"><button onClick={()=>{setLiveMapRequested(false);setArtworkRequested(true);setPanelTab("info");}}>← 홀 공략도로 돌아가기</button>{!displayPoints.tee&&!target&&<p>{courseName.toUpperCase()} {hole.hole}홀 좌표가 아직 없습니다. 아래 영상은 골프장 전체 위치 참고용입니다.</p>}</div>}
+      {showReference?<ReferenceHoleMap courseIndex={courseIndex} holeNumber={hole.hole} onExpand={()=>setFullMap(true)} onSatellite={()=>setLiveMapRequested(true)}/>:individualPending?<HoleArtwork hole={hole} courseName={courseName} storageKey={targetKey} onSatellite={()=>setLiveMapRequested(true)}/>:<FieldCaddie overview={COURSE_OVERVIEWS[courseId]} preview={preRound} setPreview={setPreRound} showGpsButtons={panelTab!=="distance"} location={location} target={target} points={displayPoints} areas={displayAreas} features={downloadedCourse?.features||[]} clubs={clubs} stats={clubStats} weather={weather} elevation={elevationDelta} missBias={profile.right>profile.left?"우":profile.left>profile.right?"좌":"중앙"} courseCenter={courseCenter} holeKey={targetKey} shots={shots} requestLocation={requestLocation} startLiveLocation={startLiveLocation} gpsStatus={gpsStatus}/>}
+      </div>
       <div className="holeDetails">
         <div className="innerTabs">
           <button className={panelTab==="info"?"on":""} onClick={()=>setPanelTab("info")}>홀 정보</button>
@@ -372,9 +383,9 @@ function VisualCourseMap({hole,courseName,location,target,points,shots,areas,fea
 function GreenMini({courseIndex}){return <div className="greenMini"><h4>그린 형태</h4><div className="greenShape"><span className={courseIndex?"diag":"cross"}>↔</span></div><small>{courseIndex?"좌측 높음　→　우측 낮음":"앞쪽 낮음　↔　뒤쪽 높음"}</small></div>}
 function StrategyBox({title,icon,children}){return <div className="strategyBox"><h4><span>{icon}</span>{title}</h4>{children}</div>}
 
-function Home({round,course,totalScore,profile,setView}){return <div className="panel"><h2>라운드 대시보드</h2><div className="cards"><Card t="다음 라운드" v={round.date+" "+round.time}/><Card t="골프장" v={course.name}/><Card t="현재 스코어" v={totalScore||"-"}/><Card t="기록 샷" v={profile.total+"개"}/><Card t="좌/우 미스" v={profile.left+" / "+profile.right}/><Card t="AI 목표" v={profile.bias}/></div><button className="primary" onClick={()=>setView("caddie")}>AI 캐디 시작</button></div>}
+function Home({round,course,totalScore,profile,setView}){return <div className="panel"><h2>라운드 대시보드</h2><div className="cards"><Card t="다음 라운드" v={round.date+" "+round.time}/><Card t="골프장" v={course.name}/><Card t="현재 스코어" v={totalScore||"-"}/><Card t="기록 샷" v={profile.total+"개"}/><Card t="좌/우 미스" v={profile.left+" / "+profile.right}/><Card t="AI 목표" v={profile.bias}/><Card t="목표타수" v={round.targetScore+"타"}/></div><button className="primary" onClick={()=>setView("caddie")}>AI 캐디 시작</button></div>}
 function Card({t,v}){return <div className="card"><small>{t}</small><b>{v}</b></div>}
-function Schedule({round,setRound}){return <div className="panel"><h2>라운드 일정</h2><div className="formgrid">{Object.entries({date:"날짜",time:"티타임",players:"인원",fee:"그린피",caddie:"캐디"}).map(([k,l])=><label key={k}>{l}<input aria-label={l} value={round[k]} type={k==="date"?"date":k==="time"?"time":k==="players"||k==="fee"?"number":"text"} onChange={e=>setRound({...round,[k]:e.target.value})}/></label>)}</div><p className="ok">입력값은 자동 저장됩니다.</p></div>}
+function Schedule({round,setRound,onEdit}){return <div className="panel"><h2>라운드 일정</h2><div className="formgrid">{Object.entries({date:"날짜",time:"티타임",players:"인원",fee:"그린피",caddie:"캐디"}).map(([k,l])=><label key={k}>{l}<input aria-label={l} value={round[k]} type={k==="date"?"date":k==="time"?"time":k==="players"||k==="fee"?"number":"text"} onChange={e=>setRound({...round,[k]:e.target.value})}/></label>)}</div><p className="ok">입력값은 자동 저장됩니다.</p><button className="primary" onClick={onEdit}>라운드 정보 수정 · 저장 &amp; 반영</button></div>}
 function Score({scores,setScoreField,shots}){const total=scores.reduce((n,s)=>n+(Number(s.strokes)||0),0),review=roundReview(shots),putts=scores.reduce((n,x)=>n+(Number(x.putts)||0),0),penalties=scores.reduce((n,x)=>n+(Number(x.penalty)||0),0);return <div className="panel"><h2>18홀 스코어카드</h2><div className="cards"><Card t="총 샷 기록" v={review.shots}/><Card t="GPS 기록률" v={review.gpsRate+"%"}/><Card t="OB / 해저드" v={review.ob+" / "+review.hazard}/><Card t="퍼트 / 벌타" v={putts+" / "+penalties}/></div>{review.shots>0&&<div className="strategyBox"><h4><span>↺</span> 라운드 자동 복기</h4><p>{review.ob+review.hazard>=3?"OB·해저드가 반복됐습니다. 다음 연습은 최대거리보다 티샷 방향성과 안전 목표를 우선하세요.":review.gpsRate<70?"GPS 샷 기록률을 70% 이상으로 올리면 홀별 미스 위치 학습이 더 정확해집니다.":"위험구역 손실이 비교적 적습니다. 다음 단계는 퍼트와 어프로치 성공률을 함께 비교하세요."}</p></div>}<div className="scoregrid">{scores.map((s,i)=><div className="scorecell" key={i}><b>{i+1}H <small>{shots[i]?.length||0}샷</small></b><input type="number" placeholder="타수" value={s.strokes} onChange={e=>setScoreField(i,"strokes",e.target.value)}/><input type="number" placeholder="퍼트" value={s.putts} onChange={e=>setScoreField(i,"putts",e.target.value)}/><input type="number" placeholder="벌타" value={s.penalty} onChange={e=>setScoreField(i,"penalty",e.target.value)}/></div>)}</div><h3>합계 {total||"-"}</h3></div>}
 function Courses({allCourses,customCourses,addCourse,setCustomCourses,courseId,setCourseId,course,rotation,updateCustomHole,setStep}){
   const [q,setQ]=useState(""),[courseName,setCourseName]=useState(rotation[0]||""),[holeNo,setHoleNo]=useState(1);
