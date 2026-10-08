@@ -7,6 +7,14 @@
   "execution": "Foreground development + existing GitHub CI. No unattended 24-hour worker is provisioned.",
   "tasks": [
     {
+      "id": "P0-11",
+      "title": "코스·홀 자료 일괄 등록과 자동 선택",
+      "gate": "GREEN",
+      "state": "SOFTWARE_VERIFIED_REAL_HOLE_SIGNOFF_PENDING",
+      "evidence": "114/114 desktop/mobile regression; atomic invalid import retention; distinct course/hole selection and reload; production build PASS",
+      "dependency": "Licensed actual hole geometry and protected deployment/physical GPS signoff"
+    },
+    {
       "id": "P0-10",
       "title": "첨부 원본 기준 개별 홀 화면",
       "gate": "GREEN",
@@ -32,7 +40,7 @@
       "title": "실제 그레이스CC 홀별 WGS84 지형 확보",
       "gate": "GREEN",
       "state": "BLOCKED_DATA",
-      "evidence": "2026-10-08 OSM API bbox map: golf_course boundary only. Overpass GET: elements empty. Official course website returned 502.",
+      "evidence": "2026-10-08 OSM API bbox map: golf_course boundary only. Overpass GET: elements empty. Official course website returned 502. GolfCore traced course page found, but public scorecard API does not license geometry/imagery integration. Official site still inaccessible. Import infrastructure ready; no fabricated holes installed.",
       "acceptance": "코스별 홀 번호와 대조한 티·그린·페어웨이·러프·개별 벙커·물·OB·나무·핀 좌표. 합성 좌표를 실제 코스로 배정하지 않음."
     },
     {

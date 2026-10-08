@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-08",
+  "beforeRemote": "914b15f071991b4ebc955aaae130ee6fc351a0fe",
+  "checkpoint": "checkpoint/pre-hole-package-20261008",
+  "classification": {
+    "KEEP": [
+      "reference individual holes",
+      "scores/clubs/academy/GPS/legacy hole imports"
+    ],
+    "BUILD": [
+      "validated multi-hole file registration",
+      "course/hole lookup",
+      "atomic storage retention"
+    ]
+  },
+  "tests": {
+    "playwright": "114/114 PASS",
+    "productionBuild": "PASS",
+    "initialInfrastructureFailure": "missing Playwright browser; restored browser and repeated full suite successfully"
+  },
+  "p0Overall": "NOT_COMPLETE",
+  "remaining": [
+    "licensed real per-hole geometry",
+    "protected deployed UI verification",
+    "physical smartphone GPS verification"
+  ],
+  "approvalNeededNow": false
+}
