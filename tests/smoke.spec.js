@@ -544,3 +544,13 @@ test("mobile primary hole view shows satellite-style course instead of street ma
   await page.locator(".coursePanel").first().getByRole("button",{name:"거리 측정"}).click();
   await expect(page.getByRole("button",{name:"오픈 코스 데이터 자동 불러오기"}).first()).toBeVisible();
 });
+
+
+test("primary Grace CC map uses real satellite embed with geographic center", async ({ page }) => {
+  await page.setViewportSize({width:412,height:915});
+  await page.goto("/");
+  const frame=page.locator(".realSatelliteFrame").first();
+  await expect(frame).toBeVisible();
+  await expect(frame).toHaveAttribute("src",/maps\.google\.com\/maps\?q=.*&t=k&z=17&output=embed/);
+  await expect(page.getByText("실제 위성지도 · 홀별 GPS 보정 전").first()).toBeVisible();
+});
