@@ -8,10 +8,13 @@ export default function LiveCourseMap({location,target,points={},shots=[],areas=
  const [base,setBase]=useState("street");
  useEffect(()=>{let dead=false;(async()=>{try{
   const ml=await import("maplibre-gl");if(dead||!el.current)return;
-  const focus=location||target||fallbackCenter;
+  const focus=target||points.center||points.tee||fallbackCenter||location;
   const center=focus?[focus.lng,focus.lat]:[128.6477776634,35.6642636516];
-  const map=new ml.Map({container:el.current,center,zoom:location||target?16:fallbackCenter?14:8,style:{version:8,sources:{base:{type:"raster",tiles:[base==="satellite"?"https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg":"https://tile.openstreetmap.org/{z}/{x}/{y}.png"],tileSize:256,attribution:base==="satellite"?"Sentinel-2 cloudless imagery via EOX":"© OpenStreetMap contributors"}},layers:[{id:"base",type:"raster",source:"base"}]}});
+  const map=new ml.Map({container:el.current,center,zoom:target||points.center||points.tee?16:fallbackCenter?14:8,style:{version:8,sources:{base:{type:"raster",tiles:[base==="satellite"?"https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg":"https://tile.openstreetmap.org/{z}/{x}/{y}.png"],tileSize:256,attribution:base==="satellite"?"Sentinel-2 cloudless imagery via EOX":"© OpenStreetMap contributors"}},layers:[{id:"base",type:"raster",source:"base"}]}});
   mapRef.current=map;map.addControl(new ml.NavigationControl(),"top-right");
+  const resize=()=>{if(!dead&&mapRef.current===map)map.resize()};
+  const observer=typeof ResizeObserver!=="undefined"?new ResizeObserver(resize):null;observer?.observe(el.current);map.once("idle",resize);requestAnimationFrame(resize);
+  map.on("remove",()=>observer?.disconnect());
   map.on("load",()=>{const data=areasGeoJSON(areas);map.addSource("course-areas",{type:"geojson",data});map.addLayer({id:"course-area-fill",type:"fill",source:"course-areas",paint:{"fill-color":["match",["get","type"],"green","#1b8f3a","fairway","#62a83b","bunker","#d8bd75","water","#2485c6","ob","#d43b3b","#888"],"fill-opacity":.32}});map.addLayer({id:"course-area-line",type:"line",source:"course-areas",paint:{"line-color":["match",["get","type"],"ob","#d43b3b","water","#2485c6","#fff"],"line-width":2}})});
   const add=(p,label,color)=>{if(!p)return;const node=document.createElement("div");node.title=label;node.style.cssText=`width:18px;height:18px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 1px 5px #0008`;new ml.Marker({element:node}).setLngLat([p.lng,p.lat]).setPopup(new ml.Popup({offset:15}).setText(label)).addTo(map)};
   add(location,"현재 위치","#1565c0");add(points.tee,"티잉구역","#111111");add(target,"현재 목표","#d32f2f");

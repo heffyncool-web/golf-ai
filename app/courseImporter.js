@@ -10,9 +10,10 @@ export function normalizeCourseImport(raw){
     if(kind==="tee")points.tee={lat,lng,source:"download"};
     if(kind==="green"||kind==="pin")points.center={lat,lng,source:"download"};
    }
+   if(g.type==="Polygon"&&kind==="green"&&!points.center){const coords=g.coordinates?.[0]||[];if(coords.length){const lat=coords.reduce((n,p)=>n+p[1],0)/coords.length,lng=coords.reduce((n,p)=>n+p[0],0)/coords.length;points.center={lat,lng,source:"download",precision:"polygon-centroid-estimate"}}}
    if(g.type==="Polygon"){
-    const ring=(g.coordinates?.[0]||[]).map(([lng,lat])=>({lat,lng,source:"download"}));
-    if(kind==="fairway")areas.fairway.push(...ring);
+    const ring=(g.coordinates?.[0]||[]).filter(p=>Array.isArray(p)&&p.length>=2&&p.every(Number.isFinite)).map(([lng,lat])=>({lat,lng,source:"download"}));
+    if(kind==="fairway"&&ring.length>=3)areas.fairway.push(...ring);
     else if(kind==="green")areas.green.push(...ring);
     else if(kind==="bunker")areas.bunker.push(...ring);
     else if(/water|hazard|penalty/.test(kind))areas.water.push(...ring);
