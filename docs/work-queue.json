@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-08",
+  "master": "docs/GOLF_AI_MASTER.md",
+  "baselineCommit": "95a8a0478a7e6571c85bcdbc6f7da9bec33e887d",
+  "p0Overall": "NOT_COMPLETE",
+  "execution": "Foreground development + existing GitHub CI. No unattended 24-hour worker is provisioned.",
+  "tasks": [
+    {
+      "id": "P0-01",
+      "title": "기존 운영·소스·체크포인트",
+      "gate": "GREEN",
+      "state": "DONE"
+    },
+    {
+      "id": "P0-02",
+      "title": "위성 기본·지도 인스턴스 유지·타일 대체",
+      "gate": "GREEN",
+      "state": "SOFTWARE_VERIFIED_REAL_HOLE_SIGNOFF_PENDING"
+    },
+    {
+      "id": "P0-03",
+      "title": "실제 그레이스CC 홀별 WGS84 지형 확보",
+      "gate": "GREEN",
+      "state": "BLOCKED_DATA",
+      "evidence": "2026-10-08 OSM API bbox map: golf_course boundary only. Overpass GET: elements empty. Official course website returned 502.",
+      "acceptance": "코스별 홀 번호와 대조한 티·그린·페어웨이·러프·개별 벙커·물·OB·나무·핀 좌표. 합성 좌표를 실제 코스로 배정하지 않음."
+    },
+    {
+      "id": "P0-04",
+      "title": "홀 전체 맞춤·확대·기본복귀·이동 제한",
+      "gate": "GREEN",
+      "state": "SOFTWARE_VERIFIED_REAL_HOLE_SIGNOFF_PENDING",
+      "dependency": "P0-03 for real course sign-off"
+    },
+    {
+      "id": "P0-05",
+      "title": "GPS·위험 시작/끝 거리·3전략·착탄/분산",
+      "gate": "GREEN",
+      "state": "SOFTWARE_VERIFIED_REAL_HOLE_SIGNOFF_PENDING",
+      "dependency": "P0-03 and physical field validation"
+    },
+    {
+      "id": "P0-06",
+      "title": "실제 배포 모바일 및 새로고침 검증",
+      "gate": "GREEN",
+      "state": "QUEUED"
+    },
+    {
+      "id": "P0-07",
+      "title": "실제 스마트폰 현장 GPS·거리 오차 확인",
+      "gate": "GREEN",
+      "state": "FIELD_VALIDATION_REQUIRED"
+    },
+    {
+      "id": "P1-01",
+      "title": "전체 상황 DB와 스윙 단계 필드 확장",
+      "gate": "GREEN",
+      "state": "QUEUED",
+      "dependency": "P0 complete"
+    },
+    {
+      "id": "P1-02",
+      "title": "검증된 시각자료와 레슨 연결",
+      "gate": "GREEN",
+      "state": "QUEUED",
+      "dependency": "P0 complete"
+    },
+    {
+      "id": "P1-03",
+      "title": "실제 MP3/MP4 생성·반복 재생·보관",
+      "gate": "GREEN",
+      "state": "QUEUED",
+      "dependency": "P0 complete"
+    },
+    {
+      "id": "P1-04",
+      "title": "실패샷 상세상황→복습큐→미션→라운드 비교",
+      "gate": "GREEN",
+      "state": "QUEUED",
+      "dependency": "P0 complete"
+    },
+    {
+      "id": "P2-01",
+      "title": "감정평가AI 바로가기·모듈 연결 확인",
+      "gate": "GREEN",
+      "state": "QUEUED"
+    },
+    {
+      "id": "P2-02",
+      "title": "서버 영구 작업큐·자동 수정 루프",
+      "gate": "YELLOW",
+      "state": "DESIGN_REQUIRED"
+    }
+  ]
+}

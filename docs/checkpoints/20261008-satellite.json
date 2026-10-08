@@ -1,0 +1,25 @@
+{
+  "baseline": "95a8a0478a7e6571c85bcdbc6f7da9bec33e887d",
+  "regression": {
+    "tests": 100,
+    "passed": 100,
+    "failed": 0,
+    "flaky": 0
+  },
+  "mapAcceptance": {
+    "tests": 10,
+    "passed": 10,
+    "failed": 0,
+    "flaky": 0
+  },
+  "evidence": {
+    "imagery": "Real Esri imagery received, screenshot inspected",
+    "geometry": "Synthetic fixture only, explicitly not a real GraceCC hole",
+    "gps": "Playwright geolocation simulation, not physical phone field validation",
+    "fallback": "WebGL disabled, real server-proxied tile images received",
+    "sourceData": "OSM has golf_course boundary but no hole/green/tee/bunker tagged features in searched region"
+  },
+  "p0Overall": "NOT_COMPLETE",
+  "productionBefore": "golf-ai-fop5.vercel.app @ 95a8a047",
+  "deploymentAfter": "PENDING"
+}

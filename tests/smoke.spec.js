@@ -20,9 +20,9 @@ test("approved dashboard desktop geometry and screenshot", async ({ page }, test
   expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(3);
   expect(Math.abs(a.width - b.width)).toBeLessThan(30);
   expect(a.width).toBeGreaterThan(380);
-  await expect(page.locator(".liveVisualMap").first()).toBeVisible();
+  await expect(page.locator(".fieldCaddie").first()).toBeVisible();
   await expect(page.locator(".coursePanel")).toHaveCount(2);
-  await expect(page.getByText(/실제 위성지도/).first()).toBeVisible();
+  await expect(page.getByLabel("GPS 실전 캐디").first()).toBeVisible();
   const shot = await page.screenshot({ fullPage: true });
   await testInfo.attach("approved-dashboard-desktop",{body:shot,contentType:"image/png"});
 });
@@ -55,7 +55,7 @@ test("all top caddie tabs are clickable and change real content", async ({ page 
   await expect(page.getByText("18홀 스코어카드")).toBeVisible();
   await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   await page.locator(".modeTabs").getByRole("button",{name:"클럽 추천",exact:true}).click();
-  await expect(page.getByRole("heading",{name:"장비/클럽",exact:true})).toBeVisible();
+  await expect(page.getByRole("heading",{name:/장비\/클럽/})).toBeVisible();
 });
 
 test("all 18 course strip hole buttons work", async ({ page }) => {
@@ -87,11 +87,11 @@ test("course panel tabs, score and next hole work", async ({ page }) => {
 
 test("club distance changes AI recommendation and landing label", async ({ page }) => {
   await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
-  await page.getByLabel("Driver").fill("230");
+  await page.getByLabel("Driver",{exact:true}).fill("230");
   await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
   const first=page.locator(".coursePanel").first();
   await expect(first.getByText(/드라이버 \(230m\)/)).toBeVisible();
-  await expect(first.locator(".liveVisualMap")).toBeVisible();
+  await expect(first.locator(".fieldCaddie")).toBeVisible();
 });
 
 test("all holes modal opens and selects a hole", async ({ page }) => {
@@ -198,11 +198,11 @@ test("AI guide compares carry clearance downstream risk and layup", async ({ pag
   await first.getByLabel("장애물 앞 거리").fill("150");
   await first.getByLabel("장애물 폭").fill("15");
   await first.getByLabel("장애물 뒤 위험").selectOption("내리막+OB");
-  await expect(first.getByText(/최소 캐리:/)).toContainText("165m");
-  await expect(first.getByText(/안전 캐리:/)).toContainText("172m");
-  await expect(first.getByText("SAFE",{exact:true})).toBeVisible();
-  await expect(first.getByText("STANDARD",{exact:true})).toBeVisible();
-  await expect(first.getByText("AGGRESSIVE",{exact:true})).toBeVisible();
+  await expect(first.locator("p").filter({hasText:"최소 캐리:"})).toContainText("165m");
+  await expect(first.locator("p").filter({hasText:"안전 캐리:"})).toContainText("172m");
+  await expect(first.locator(".strategyCards").getByText("SAFE",{exact:true})).toBeVisible();
+  await expect(first.locator(".strategyCards").getByText("STANDARD",{exact:true})).toBeVisible();
+  await expect(first.locator(".strategyCards").getByText("AGGRESSIVE",{exact:true})).toBeVisible();
   await expect(first.getByText("더 쉬운 대안")).toBeVisible();
 });
 
@@ -317,7 +317,7 @@ test("address result links into personal alignment learning", async ({ page }) =
   await first.getByRole("button",{name:"샷 결과 연결"}).click();
  }
  await expect(first.getByText(/표본 3개/)).toBeVisible();
- await expect(first.getByText(/우측 미스가 100%/)).toBeVisible();
+ await expect(first.getByText(/우측 미스가 100%/).first()).toBeVisible();
 });
 
 
@@ -369,7 +369,7 @@ test("score shot can retain GPS context for hole review", async ({ page, context
  await context.grantPermissions(["geolocation"]);await context.setGeolocation({latitude:35.647,longitude:128.735});
  await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
  const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();await first.getByRole("button",{name:"GPS 현재위치"}).click();
- await first.getByRole("button",{name:"스코어"}).click();
+ await first.getByRole("button",{name:"이 홀로 스코어 기록하기",exact:true}).click();
  await first.getByLabel(/샷 거리/).fill("210");await first.getByRole("button",{name:"추가",exact:true}).click();
  await first.getByRole("button",{name:"홀 샷 복기"}).click();
  await expect(first.getByText(/GPS 35\.647/)).toBeVisible();
@@ -403,7 +403,7 @@ test("default short game wedge uses 56 degree naming", async ({ page }) => {
 test("live caddie exposes real interactive map surface", async ({ page }) => {
  await page.reload();await page.locator(".nav").getByRole("button",{name:"AI 캐디",exact:true}).click();
  const first=page.locator(".coursePanel").first();await first.getByRole("button",{name:"거리 측정"}).click();
- await expect(first.getByLabel("실제 인터랙티브 코스 지도")).toBeVisible();
+ await expect(first.getByLabel("실제 인터랙티브 코스 지도").first()).toBeVisible();
 });
 
 test("camera coach exposes zero degree calibration", async ({ page }) => {
@@ -477,7 +477,7 @@ test("daily moved tee box can override nominal tee without changing master tee",
  await page.reload();
  const first=page.locator(".coursePanel").first();
  await first.getByRole("button",{name:"거리 측정"}).click();
- await expect(first.getByText("오늘 티박스 위치")).toBeVisible();
+ await expect(first.getByText(/2단계 · 현장 GPS 보정/)).toBeVisible();
  await expect(first.getByRole("button",{name:"오늘 티박스 현재 GPS 적용"})).toBeVisible();
  await expect(first.getByRole("button",{name:"오늘 티박스 위치 해제"})).toBeDisabled();
  await expect(first.getByText(/기준 티 좌표와 별도로 저장/)).toBeVisible();
@@ -525,8 +525,8 @@ test("fresh v6 state renders after reload on mobile", async ({ page }) => {
   await page.setViewportSize({width:412,height:915});
   await page.goto("/");
   await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
-  await page.getByLabel("Driver").fill("225");
+  await page.getByLabel("Driver",{exact:true}).fill("225");
   await page.reload();
   await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
-  await expect(page.getByLabel("Driver")).toHaveValue("225");
+  await expect(page.getByLabel("Driver",{exact:true})).toHaveValue("225");
 });

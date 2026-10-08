@@ -20,7 +20,11 @@ export function normalizeCourseImport(raw){
     else if(kind==="ob")areas.ob.push(...ring);
    }
   }
-  return {points,areas,source:"GeoJSON 다운로드",importedAt:new Date().toISOString()};
+  // Keep independent polygons: joining multiple bunkers creates imaginary bridges.
+  const features=(src.features||[]).filter(f=>f?.geometry);
+  const holeLine=features.find(f=>f.properties?.golf==="hole"&&f.geometry?.type==="LineString");
+  if(holeLine){const coords=holeLine.geometry.coordinates;if(coords.length>=2){points.tee??={lng:coords[0][0],lat:coords[0][1],source:"hole-line-estimate"};points.center??={lng:coords.at(-1)[0],lat:coords.at(-1)[1],source:"hole-line-estimate"};}}
+  return {points,areas,features,source:"GeoJSON 다운로드",importedAt:new Date().toISOString()};
  }
  if(src.points||src.areas)return {...src,source:src.source||"다운로드 파일",importedAt:src.importedAt||new Date().toISOString()};
  throw new Error("지원하지 않는 코스 데이터 형식");
