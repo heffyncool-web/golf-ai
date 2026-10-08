@@ -299,7 +299,7 @@ function CoursePanel({courseName,courseIndex,courseId,courseCenter,hole,holeInde
   return <article className={"coursePanel "+color}>
     <div className="panelTitle">{courseName.toUpperCase()} {hole.hole}H <small>Par {hole.par}　{dailyTeeToGreen!=null?dailyTeeToGreen:hole.distance}m{dailyTeeToGreen!=null?" · 오늘 티박스":""}</small><label>홀 전체보기 <input aria-label={courseName+" 홀 전체보기"} type="checkbox" checked={fullMap} onChange={e=>setFullMap(e.target.checked)}/></label></div>
     <div className="panelCore">
-      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} downloadedCourse={Boolean(downloadedCourse)}/>
+      <VisualCourseMap hole={hole} courseName={courseName} profile={profile} driver={driver} downloadedCourse={Boolean(downloadedCourse)} courseCenter={courseCenter}/>
       <div className="holeDetails">
         <div className="innerTabs">
           <button className={panelTab==="info"?"on":""} onClick={()=>setPanelTab("info")}>홀 정보</button>
@@ -341,12 +341,18 @@ function CoursePanel({courseName,courseIndex,courseId,courseCenter,hole,holeInde
   </article>
 }
 
-function VisualCourseMap({hole,courseName,profile,driver,downloadedCourse}){
+function VisualCourseMap({hole,courseName,profile,driver,downloadedCourse,courseCenter}){
   const isLake=/lake/i.test(courseName);
   const image=isLake?SATELLITE_MAPS.lake:SATELLITE_MAPS.mountain;
   const aimX=profile?.bias==="좌중앙"?96:profile?.bias==="우중앙"?124:110;
+  const center=courseCenter&&Number.isFinite(Number(courseCenter.lat))&&Number.isFinite(Number(courseCenter.lng))
+    ? {lat:Number(courseCenter.lat),lng:Number(courseCenter.lng)}
+    : {lat:35.6641828,lng:128.6477676};
+  const googleSrc=`https://maps.google.com/maps?q=${center.lat},${center.lng}&t=k&z=17&output=embed`;
   return <div className="visualMap satelliteMap mainSatelliteMap" style={{backgroundImage:`linear-gradient(180deg,rgba(0,25,12,.03),rgba(0,25,12,.18)),url(${image})`}}>
-    <svg className="mapOverlay" viewBox="0 0 220 430" role="img" aria-label={courseName+" "+hole.hole+"홀 위성형 공략도"}>
+    <iframe className="realSatelliteFrame" title={courseName+" "+hole.hole+"홀 실제 위성지도"} src={googleSrc} loading="lazy" referrerPolicy="no-referrer-when-downgrade"/>
+    <div className="satelliteShade"/>
+    <svg className="mapOverlay" viewBox="0 0 220 430" role="img" aria-label={courseName+" "+hole.hole+"홀 실제 위성지도 공략 오버레이"}>
       <defs><filter id={"g"+courseName+hole.hole}><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
       <path d="M110 388 C108 335 106 300 108 258 C111 215 102 170 108 126 C111 100 109 74 110 48" fill="none" stroke="#50e8ff" strokeWidth="3" strokeDasharray="7 7" filter={"url(#g"+courseName+hole.hole+")"}/>
       <path d={`M110 388 Q${aimX} 280 ${aimX} 186`} fill="none" stroke="#fff" strokeWidth="2.2" opacity=".95"/>
@@ -359,7 +365,7 @@ function VisualCourseMap({hole,courseName,profile,driver,downloadedCourse}){
       <text x="121" y="188" fill="#fff" fontSize="17" fontWeight="900" stroke="#1e4024" strokeWidth=".8">{driver||220}m</text>
     </svg>
     {(hole.hazards||[]).slice(0,3).map((h,i)=><span className={"hazardLabel h"+i} key={h}>{h}</span>)}
-    <span className="conceptBadge satelliteBadge">{downloadedCourse?"코스 데이터 연결됨 · 위성형 공략도":"위성형 공략도 · 홀 정보 우선 표시"}</span>
+    <span className="conceptBadge satelliteBadge">{downloadedCourse?"코스 데이터 연결됨 · 실제 위성지도":"실제 위성지도 · 홀별 GPS 보정 전"}</span>
   </div>
 }
 
