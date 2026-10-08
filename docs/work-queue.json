@@ -44,7 +44,8 @@
       "id": "P0-06",
       "title": "실제 배포 모바일 및 새로고침 검증",
       "gate": "GREEN",
-      "state": "QUEUED"
+      "state": "PREVIEW_READY_VERIFICATION_BLOCKED_403",
+      "evidence": "GitHub Vercel – golf-ai-fop5 commit status success. Vercel deployment access/bypass API denies current connection with 403. Production remains unchanged."
     },
     {
       "id": "P0-07",

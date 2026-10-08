@@ -21,5 +21,12 @@
   },
   "p0Overall": "NOT_COMPLETE",
   "productionBefore": "golf-ai-fop5.vercel.app @ 95a8a047",
-  "deploymentAfter": "PENDING"
+  "deploymentAfter": {
+    "codeCommit": "8027c34f20f3a26cc976a63fb878b93a9a1c44f6",
+    "preview": "https://golf-ai-fop5-git-fix-satellite-hole-caddi-c80f2b-heffyncool-web.vercel.app",
+    "state": "READY_GITHUB_VERCEL_STATUS",
+    "uiVerification": "BLOCKED_PROTECTED_DEPLOYMENT_ACCESS_403",
+    "production": "UNCHANGED",
+    "pullRequest": "https://github.com/heffyncool-web/golf-ai/pull/22"
+  }
 }
