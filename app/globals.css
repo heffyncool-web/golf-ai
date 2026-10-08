@@ -83,3 +83,9 @@
 .autoCourseImport button{flex:0 1 auto;max-width:100%;white-space:normal;overflow-wrap:anywhere;padding:9px 12px;border:1px solid #0b67bb;border-radius:6px;background:#fff;color:#07549c;font-size:13px;font-weight:800;line-height:1.4}
 .autoCourseImport small{display:block;flex:1 1 190px;min-width:0;font-size:12px;line-height:1.5;color:#435867;overflow-wrap:anywhere}
 @media(max-width:560px){.panelCore:has(.liveVisualMap)>.autoCourseImport{display:grid;grid-template-columns:minmax(0,1fr);padding:10px;gap:6px}.autoCourseImport button{width:100%;font-size:14px}.autoCourseImport small{font-size:12px}.liveVisualMap .hazardLabel{pointer-events:none}}
+
+/* Mobile import/status always stack, regardless of older inline legacy CSS. */
+.panelCore .autoCourseImport{box-sizing:border-box!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:stretch!important;width:100%!important;min-width:0!important;max-width:100%!important;gap:8px!important;padding:12px!important;overflow:hidden!important;float:none!important}
+.panelCore .autoCourseImport>button{display:block!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.45!important}
+.panelCore .autoCourseImport>small{display:block!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.55!important}
+.panelCore .autoCourseImport>button:disabled{opacity:.6;cursor:wait}
