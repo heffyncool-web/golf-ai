@@ -77,3 +77,9 @@
 .liveVisualMap .liveMapShell,.liveVisualMap .liveMapCanvas,.liveVisualMap .maplibregl-map{width:100%!important;height:100%!important;min-height:0!important}
 @media(max-width:900px){.panelCore:has(.liveVisualMap)>.liveVisualMap{height:460px;min-height:380px}}
 @media(max-width:560px){.panelCore:has(.liveVisualMap)>.liveVisualMap{height:390px;min-height:350px}}
+
+/* Harness mobile regression: keep course download controls outside the map and readable. */
+.panelCore:has(.liveVisualMap)>.autoCourseImport{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f4f9fc;border-bottom:1px solid #d7e3ea;min-width:0;overflow-wrap:anywhere}
+.autoCourseImport button{flex:0 1 auto;max-width:100%;white-space:normal;overflow-wrap:anywhere;padding:9px 12px;border:1px solid #0b67bb;border-radius:6px;background:#fff;color:#07549c;font-size:13px;font-weight:800;line-height:1.4}
+.autoCourseImport small{display:block;flex:1 1 190px;min-width:0;font-size:12px;line-height:1.5;color:#435867;overflow-wrap:anywhere}
+@media(max-width:560px){.panelCore:has(.liveVisualMap)>.autoCourseImport{display:grid;grid-template-columns:minmax(0,1fr);padding:10px;gap:6px}.autoCourseImport button{width:100%;font-size:14px}.autoCourseImport small{font-size:12px}.liveVisualMap .hazardLabel{pointer-events:none}}
