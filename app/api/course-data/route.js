@@ -1,6 +1,6 @@
 import {NextResponse} from "next/server";
 export const runtime="nodejs";
-const endpoints=["https://overpass.private.coffee/api/interpreter","https://overpass.nchc.org.tw/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+const endpoints=["https://overpass.private.coffee/api/interpreter","https://overpass.nchc.org.tw/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass-api.de/api/interpreter"];
 const memoryCache=new Map();
 const TTL=6*60*60*1000;
 const allowed=new Set(["tee","green","fairway","bunker","water_hazard","hole"]);
@@ -12,17 +12,15 @@ export async function GET(request){
  if(cached&&Date.now()-cached.time<TTL)return NextResponse.json({...cached.data,cacheStatus:"fresh"},{headers:{"Cache-Control":"public, s-maxage=3600"}});
  const q=`[out:json][timeout:20];(nwr(around:1800,${lat},${lng})["golf"~"^(hole|tee|green|fairway|bunker|water_hazard)$"];);out geom;`;
  try{
-  let response=null;const errors=[];
+  let data=null;const errors=[];
   for(const endpoint of endpoints){
    try{
-    const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded","Accept":"application/json","User-Agent":"GolfAI-CourseViewer/1.0 (OpenStreetMap attribution in UI)"},body:new URLSearchParams({data:q}),signal:AbortSignal.timeout(9500),cache:"no-store"});
+    const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded","Accept":"application/json","User-Agent":"GolfAI-CourseViewer/1.0 (OpenStreetMap attribution in UI)"},body:new URLSearchParams({data:q}),signal:AbortSignal.timeout(4500),cache:"no-store"});
     if(!r.ok){errors.push(r.status);continue;}
-    response=r;break;
+    const parsed=await r.json();if(!Array.isArray(parsed?.elements)){errors.push("invalid-data");continue;}data=parsed;break;
    }catch(e){errors.push(e?.name==="TimeoutError"?"timeout":"network");}
   }
-  if(!response)throw Error("Overpass unavailable: "+errors.join(","));
-  const data=await response.json();
-  if(!Array.isArray(data.elements))throw Error("Invalid Overpass payload");
+  if(!data)throw Error("Overpass unavailable: "+errors.join(","));
   const features=[];
   for(const e of data.elements||[]){
    const kind=e.tags?.golf;if(!allowed.has(kind))continue;
