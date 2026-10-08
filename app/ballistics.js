@@ -3,7 +3,7 @@ export function slopeAdjustedDistance(distance,elevationDelta=0){
  return Math.max(0,Math.round(d+h*.9));
 }
 export function windAdjustedDistance(distance,wind=0,relation="무풍"){
- const d=Number(distance)||0,w=Math.max(0,Number(wind)||0),f=relation==="맞바람"?1:relation==="뒷바람"?-.55:0;
+ const d=Number(distance)||0,w=Math.max(0,Number(wind)||0),f=(relation==="맞바람"||relation==="앞바람")?1:relation==="뒷바람"?-.55:0;
  return Math.max(0,Math.round(d+w*2.2*f));
 }
 export function effectiveDistance({distance,elevationDelta=0,wind=0,relation="무풍"}){

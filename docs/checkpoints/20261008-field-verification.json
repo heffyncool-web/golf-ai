@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-08",
+  "beforeRemote": "f816ce028bf64b9be17ed2444f97b3ed778877d5",
+  "checkpoint": "checkpoint/pre-field-verification-20261008",
+  "KEEP": [
+    "individual reference layout",
+    "satellite/GPS instance and caddie engine",
+    "scores/clubs/academy",
+    "existing per-hole and package data"
+  ],
+  "FIX": [
+    "corrupt stored packages no longer crash page",
+    "GPS registration percentage no longer presented as measurement verification",
+    "retain actual geolocation fix timestamp"
+  ],
+  "BUILD": [
+    "independent reference distance comparison",
+    "freshness/accuracy flags",
+    "hole-scoped comparison history and duplicate guard"
+  ],
+  "tests": {
+    "fullRegression": "120/120 in two disjoint runs (104+16)",
+    "afterTimestampChange": "42/42 affected cases",
+    "productionBuild": "PASS"
+  },
+  "sources": {
+    "official": "https://www.grace-cc.co.kr/club/club-info timeout",
+    "GolfTraxx": "https://golftraxx.com/playing?coursename=The+Grace+Country+Club+그레이스,+Lake/Mountain&hole=1&static=true&zipcode=SK803; tee and green coordinates 0, not usable"
+  },
+  "p0Overall": "NOT_COMPLETE",
+  "remaining": [
+    "actual licensed per-hole geometry",
+    "protected deployed UI access",
+    "physical smartphone GPS/reference captures"
+  ]
+}
