@@ -26,13 +26,33 @@ const DEFAULT_CLUBS={Driver:220,"3W":200,"5W":180,Utility:170,"5I":160,"6I":150,
 const MISSES=["정타","좌","우","짧음","김","OB","해저드","벙커"];
 const RELATIONS=["자동","앞바람","뒷바람","좌→우","우→좌"];
 
-function useStoredState(key,initial){
+function useStoredState(key,initial,normalize=(v)=>v){
   const [value,setValue]=useState(initial);
   const [ready,setReady]=useState(false);
-  useEffect(()=>{const raw=localStorage.getItem(key);if(raw){try{setValue(JSON.parse(raw))}catch{}}setReady(true)},[key]);
-  useEffect(()=>{if(ready)localStorage.setItem(key,JSON.stringify(value))},[key,value,ready]);
+  useEffect(()=>{
+    try{
+      const raw=window.localStorage?.getItem(key);
+      if(raw){
+        const parsed=JSON.parse(raw);
+        setValue(normalize(parsed));
+      }
+    }catch{
+      setValue(initial);
+    }finally{
+      setReady(true);
+    }
+  },[key]);
+  useEffect(()=>{
+    if(!ready)return;
+    try{window.localStorage?.setItem(key,JSON.stringify(value))}catch{}
+  },[key,value,ready]);
   return [value,setValue];
 }
+const normalizeClubs=(v)=>v&&typeof v==="object"&&!Array.isArray(v)?{...DEFAULT_CLUBS,...v}:DEFAULT_CLUBS;
+const normalizeScores=(v)=>Array.isArray(v)?Array.from({length:18},(_,i)=>({...{strokes:"",putts:"",penalty:""},...(v[i]&&typeof v[i]==="object"?v[i]:{})})):Array.from({length:18},()=>({strokes:"",putts:"",penalty:""}));
+const normalizeShots=(v)=>Array.isArray(v)?Array.from({length:18},(_,i)=>Array.isArray(v[i])?v[i]:[]):Array.from({length:18},()=>[]);
+const normalizeArray=(v)=>Array.isArray(v)?v:[];
+const normalizeObject=(fallback)=>(v)=>v&&typeof v==="object"&&!Array.isArray(v)?{...fallback,...v}:fallback;
 function nearestClub(clubs,distance){
   return Object.entries(clubs).filter(([,v])=>Number(v)>0).sort((a,b)=>Math.abs(Number(a[1])-distance)-Math.abs(Number(b[1])-distance))[0]?.[0]||"-";
 }
@@ -64,20 +84,22 @@ function currentStepFor(courseIndex,holeIndex){return courseIndex*9+holeIndex}
 
 export default function Page(){
   const [view,setView]=useState("caddie");
-  const [clubs,setClubs]=useStoredState("golfClubsV3",DEFAULT_CLUBS);
+  const [clubs,setClubs]=useStoredState("golfClubsV6",DEFAULT_CLUBS,normalizeClubs);
   const [clubStats,setClubStats]=useStoredState("golfClubStatsV1",defaultClubStats(DEFAULT_CLUBS));
-  const [scores,setScores]=useStoredState("golfScoresV3",Array.from({length:18},()=>({strokes:"",putts:"",penalty:""})));
-  const [shots,setShots]=useStoredState("golfShotsV3",Array.from({length:18},()=>[]));
-  const [customCourses,setCustomCourses]=useStoredState("golfCustomCoursesV3",[]);
-  const [courseId,setCourseId]=useStoredState("golfCourseIdV3","grace-cc");
+  const [scores,setScores]=useStoredState("golfScoresV6",Array.from({length:18},()=>({strokes:"",putts:"",penalty:""})),normalizeScores);
+  const [shots,setShots]=useStoredState("golfShotsV6",Array.from({length:18},()=>[]),normalizeShots);
+  const [customCourses,setCustomCourses]=useStoredState("golfCustomCoursesV6",[],normalizeArray);
+  const [courseId,setCourseId]=useStoredState("golfCourseIdV6","grace-cc",v=>typeof v==="string"?v:"grace-cc");
   const [step,setStep]=useState(0);
-  const [round,setRound]=useStoredState("golfRoundV3",{date:"2026-10-19",time:"13:10",players:4,fee:150000,caddie:"정규캐디"});
-  const [weather,setWeather]=useStoredState("golfWeatherV3",{temp:22,wind:2,windDeg:null,relation:"자동",source:"수동",updatedAt:""});
+  const defaultRound={date:"2026-10-19",time:"13:10",players:4,fee:150000,caddie:"정규캐디"};
+  const [round,setRound]=useStoredState("golfRoundV6",defaultRound,normalizeObject(defaultRound));
+  const defaultWeather={temp:22,wind:2,windDeg:null,relation:"자동",source:"수동",updatedAt:""};
+  const [weather,setWeather]=useStoredState("golfWeatherV6",defaultWeather,normalizeObject(defaultWeather));
   const [location,setLocation]=useState(null);
   const gpsWatch=useRef(null);
   const [gpsStatus,setGpsStatus]=useState("위치 미확인");
-  const [memo,setMemo]=useStoredState("golfMemoV3","");
-  const [practice,setPractice]=useStoredState("golfPracticeV3",[]);
+  const [memo,setMemo]=useStoredState("golfMemoV6","",v=>typeof v==="string"?v:"");
+  const [practice,setPractice]=useStoredState("golfPracticeV6",[],normalizeArray);
   const course=useMemo(()=>getCourseById(courseId,customCourses),[courseId,customCourses]);
   const rotation=course.defaultRotation||Object.keys(course.courses||{});
   const profile=useMemo(()=>missProfile(shots),[shots]);

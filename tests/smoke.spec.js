@@ -500,3 +500,33 @@ test("course overlay first view avoids pretending blurry imagery is verified geo
  await expect(first.getByRole("button",{name:"위성지도 보기"})).toBeVisible();
  await expect(first.getByRole("button",{name:"일반지도 보기"})).toBeVisible();
 });
+
+
+test("mobile survives corrupted legacy localStorage without client exception", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("golfClubsV3","null");
+    localStorage.setItem("golfScoresV3","{}");
+    localStorage.setItem("golfShotsV3","{}");
+    localStorage.setItem("golfCustomCoursesV3","{}");
+    localStorage.setItem("golfCourseIdV3","123");
+    localStorage.setItem("golfRoundV3","[]");
+    localStorage.setItem("golfWeatherV3","[]");
+  });
+  await page.setViewportSize({width:412,height:915});
+  const errors=[];
+  page.on("pageerror",e=>errors.push(String(e)));
+  await page.goto("/");
+  await expect(page.getByText("청도 그레이스CC").first()).toBeVisible();
+  await expect(page.locator(".coursePanel")).toHaveCount(2);
+  expect(errors).toEqual([]);
+});
+
+test("fresh v6 state renders after reload on mobile", async ({ page }) => {
+  await page.setViewportSize({width:412,height:915});
+  await page.goto("/");
+  await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
+  await page.getByLabel("Driver").fill("225");
+  await page.reload();
+  await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
+  await expect(page.getByLabel("Driver")).toHaveValue("225");
+});
