@@ -1,10 +1,15 @@
 import {NextResponse} from "next/server";
 export const runtime="nodejs";
 const endpoints=["https://overpass.private.coffee/api/interpreter","https://overpass.nchc.org.tw/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+const memoryCache=new Map();
+const TTL=6*60*60*1000;
 const allowed=new Set(["tee","green","fairway","bunker","water_hazard","hole"]);
 export async function GET(request){
  const u=new URL(request.url),lat=Number(u.searchParams.get("lat")),lng=Number(u.searchParams.get("lng"));
  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<33||lat>39||lng<124||lng>132)return NextResponse.json({error:"지원하지 않는 좌표"},{status:400});
+ const cacheKey=`${lat.toFixed(3)}:${lng.toFixed(3)}`;
+ const cached=memoryCache.get(cacheKey);
+ if(cached&&Date.now()-cached.time<TTL)return NextResponse.json({...cached.data,cacheStatus:"fresh"},{headers:{"Cache-Control":"public, s-maxage=3600"}});
  const q=`[out:json][timeout:20];(nwr(around:1800,${lat},${lng})["golf"~"^(hole|tee|green|fairway|bunker|water_hazard)$"];);out geom;`;
  try{
   let response=null;const errors=[];
@@ -17,6 +22,7 @@ export async function GET(request){
   }
   if(!response)throw Error("Overpass unavailable: "+errors.join(","));
   const data=await response.json();
+  if(!Array.isArray(data.elements))throw Error("Invalid Overpass payload");
   const features=[];
   for(const e of data.elements||[]){
    const kind=e.tags?.golf;if(!allowed.has(kind))continue;
@@ -28,6 +34,9 @@ export async function GET(request){
    const closed=coords.length>=4&&coords[0][0]===coords.at(-1)[0]&&coords[0][1]===coords.at(-1)[1];
    features.push({type:"Feature",properties:{...e.tags,osmId:e.id},geometry:closed?{type:"Polygon",coordinates:[coords]}:{type:"LineString",coordinates:coords}});
   }
-  return NextResponse.json({type:"FeatureCollection",features,source:"OpenStreetMap / Overpass",license:"ODbL",attribution:"© OpenStreetMap contributors",fetchedAt:new Date().toISOString()},{headers:{"Cache-Control":"public, s-maxage=3600, stale-while-revalidate=86400"}});
- }catch(e){return NextResponse.json({error:"OSM 데이터 제공 서버가 응답하지 않습니다. 잠시 후 재시도하거나 GeoJSON 파일을 불러오세요.",retryable:true},{status:503,headers:{"Retry-After":"60"}})}
+  const payload={type:"FeatureCollection",features,source:"OpenStreetMap / Overpass",license:"ODbL",attribution:"© OpenStreetMap contributors",fetchedAt:new Date().toISOString()};
+  memoryCache.set(cacheKey,{time:Date.now(),data:payload});
+  if(memoryCache.size>100){const oldest=memoryCache.keys().next().value;memoryCache.delete(oldest)}
+  return NextResponse.json(payload,{headers:{"Cache-Control":"public, s-maxage=3600, stale-while-revalidate=86400"}});
+ }catch(e){if(cached)return NextResponse.json({...cached.data,cacheStatus:"stale",warning:"OSM 서버 장애로 저장된 코스 자료를 표시합니다."},{headers:{"Cache-Control":"no-store"}});return NextResponse.json({error:"OSM 데이터 제공 서버가 응답하지 않습니다. 잠시 후 재시도하거나 GeoJSON 파일을 불러오세요.",retryable:true},{status:503,headers:{"Retry-After":"60"}})}
 }
