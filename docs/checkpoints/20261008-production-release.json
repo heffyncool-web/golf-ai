@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-08",
+  "releaseCommit": "54eb37dbdc387c5f9a2bd539eac7ca82c0d06076",
+  "sourceHead": "41214f88780610a189c7815d3dd598244b912275",
+  "previousMain": "95a8a0478a7e6571c85bcdbc6f7da9bec33e887d",
+  "rollbackBranch": "checkpoint/pre-production-hole-release-20261008",
+  "deployment": "Vercel golf-ai-fop5 3FE8h2eociZqoWzuyj2BZjQgrVM4 success",
+  "url": "https://golf-ai-fop5.vercel.app",
+  "verification": {
+    "mobileIndividualZoomResetReload": "PASS",
+    "mobileNewPackageAndFieldComparisonUI": "PASS",
+    "desktopLayoutScoreActionPlacement": "PASS",
+    "realSatelliteTileHTTP": 200,
+    "realSatelliteViewport": "PASS",
+    "emulatedGpsAndThreeStrategies": "PASS",
+    "pageErrors": 0,
+    "horizontalOverflow": false
+  },
+  "networkRecovery": "Runtime direct DNS EAI_AGAIN; configured HTTPS_PROXY succeeded. No account/auth changes.",
+  "testGeometry": "Synthetic fixture only in isolated test browser; not actual Grace hole coordinates",
+  "physicalGpsVerified": false,
+  "actualGraceHoleGeometryVerified": false,
+  "p0Overall": "NOT_COMPLETE"
+}

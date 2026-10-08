@@ -86,15 +86,16 @@
       "id": "P0-06",
       "title": "실제 배포 모바일 및 새로고침 검증",
       "gate": "GREEN",
-      "state": "PREVIEW_READY_VERIFICATION_BLOCKED_403",
-      "evidence": "GitHub Vercel – golf-ai-fop5 commit status success. Vercel deployment access/bypass API denies current connection with 403. Production remains unchanged."
+      "state": "DONE_PUBLIC_PRODUCTION_VERIFIED",
+      "evidence": "Released PR22 to main; Vercel golf-ai-fop5 success. Public production mobile and desktop browser checks PASS through configured runtime network proxy. Real satellite tile HTTP200 and whole imagery viewport readiness verified with synthetic client-local test geometry. No auth settings changed. Preview connector access 403 remains separate from public production verification."
     },
     {
       "id": "P0-07",
       "title": "실제 스마트폰 현장 GPS·거리 오차 확인",
       "gate": "GREEN",
       "state": "FIELD_VALIDATION_REQUIRED",
-      "preparation": "Distance panel GPS 실측 거리 비교 available. GPS accuracy <=10m, fix within 60s at capture, same-day record and difference <=5m are explicit app criteria only, not entire hole signoff."
+      "preparation": "Distance panel GPS 실측 거리 비교 available. GPS accuracy <=10m, fix within 60s at capture, same-day record and difference <=5m are explicit app criteria only, not entire hole signoff.",
+      "deployedPreparation": "GPS emulation and 3-strategy rendering PASS on public production; physical smartphone/reference measurements still required."
     },
     {
       "id": "P1-01",
@@ -136,5 +137,11 @@
       "gate": "YELLOW",
       "state": "DESIGN_REQUIRED"
     }
-  ]
+  ],
+  "productionRelease": {
+    "sha": "54eb37dbdc387c5f9a2bd539eac7ca82c0d06076",
+    "url": "https://golf-ai-fop5.vercel.app",
+    "rollback": "checkpoint/pre-production-hole-release-20261008",
+    "publicVerification": "PASS: mobile reference/reload/new controls/real tile response, desktop layout, real imagery viewport, emulated GPS/3 strategies. Actual Grace hole geometry and physical GPS not verified."
+  }
 }
