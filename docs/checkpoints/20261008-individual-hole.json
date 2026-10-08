@@ -1,0 +1,57 @@
+{
+  "previousRemoteCommit": "595a360c96a3219ca2050e5cdb60e33c48cc0312",
+  "localRollbackTag": "checkpoint/pre-individual-hole-20261008",
+  "goal": "Default individual-hole view matching user original image, not entire-course overview",
+  "originalAsset": "public/reference/golf-hole-layout.png",
+  "originalAssetUnmodified": true,
+  "referenceHoles": [
+    "Lake1H",
+    "Mountain1H"
+  ],
+  "unavailableHoles": "Explicit pending state; no first-hole image reused as another hole",
+  "preserved": [
+    "GPS and satellite engines",
+    "Course imagery fallback",
+    "Personal club profiles",
+    "Scores and shot records",
+    "Academy and media workflows",
+    "Existing source/project/main deployment"
+  ],
+  "regression": {
+    "startTime": "2026-10-08T12:15:41.002Z",
+    "duration": 331410.75800000003,
+    "expected": 108,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  },
+  "networkRetest": {
+    "startTime": "2026-10-08T12:21:26.408Z",
+    "duration": 65412.78999999999,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "rootCause": "The real-network test covers initial and refreshed maps, each potentially taking 18s to fall back. The previous 30s entire-test deadline preempted its own 40s readiness assertion. Corrected test deadline to 90s; assertions still require actual imagery. Raster fallback is a supported renderer and is checked instead of requiring unavailable WebGL markers.",
+  "build": "PASS",
+  "localProductionUI": "PASS, no page errors, original image HTTP 200, 2 reference maps, no default whole-course map; score actions fit above footer at 1536x1024",
+  "deploymentUI": "BLOCKED_BY_EXISTING_PREVIEW_ACCESS_403",
+  "physicalGPS": "NOT_TESTED",
+  "p0Overall": "NOT_COMPLETE",
+  "production": "UNCHANGED",
+  "remaining": [
+    "Actual numbered-hole imagery and verified WGS84 coordinates",
+    "Physical field GPS",
+    "Protected deployed UI validation"
+  ],
+  "finalLayoutRetest": {
+    "startTime": "2026-10-08T12:28:19.404Z",
+    "duration": 31030.082,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "buildRecovery": "Build artifact export-directory collision resolved by preserving prior .next directory and rebuilding from a clean output directory; final production build passed"
+}

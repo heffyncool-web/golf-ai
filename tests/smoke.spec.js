@@ -22,7 +22,7 @@ test("approved dashboard desktop geometry and screenshot", async ({ page }, test
   expect(a.width).toBeGreaterThan(380);
   await expect(page.locator(".fieldCaddie").first()).toBeVisible();
   await expect(page.locator(".coursePanel")).toHaveCount(2);
-  await expect(page.getByLabel("GPS 실전 캐디").first()).toBeVisible();
+  await expect(page.getByLabel("LAKE 1H 개별 홀 공략도")).toBeVisible();
   const shot = await page.screenshot({ fullPage: true });
   await testInfo.attach("approved-dashboard-desktop",{body:shot,contentType:"image/png"});
 });
@@ -157,7 +157,7 @@ test("hole full-view toggle opens a real satellite map modal and closes", async 
   const toggle=first.getByLabel("Lake 홀 전체보기");
   await toggle.check();
   await expect(page.locator(".mapModal")).toBeVisible();
-  await expect(page.locator(".mapModal .liveVisualMap")).toBeVisible();
+  await expect(page.locator(".mapModal .referenceHoleView")).toBeVisible();
   await page.getByRole("button",{name:"지도 닫기"}).click();
   await expect(page.locator(".mapModal")).toHaveCount(0);
 });
@@ -495,6 +495,7 @@ test("download-first course mode is available before field GPS", async ({ page }
 test("course overlay first view avoids pretending blurry imagery is verified geometry", async ({ page }) => {
  await page.reload();
  const first=page.locator(".coursePanel").first();
+ await first.locator(".holeDataTools summary").click();
  await expect(first.getByText(/코스 데이터 불러오기 전|다운로드 코스 형상 적용됨/)).toBeVisible();
  await first.getByRole("button",{name:"거리 측정"}).click();
  await expect(first.getByRole("button",{name:"위성지도 보기"})).toBeVisible();

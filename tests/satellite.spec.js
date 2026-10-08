@@ -10,15 +10,18 @@ test('geometry engine keeps separate bunkers, distance edges and cautious layup'
  expect(m.caddiePlans({origin:tee,target:green,features:[],clubs:{'8I':130}})[0].success).toBeNull();
 });
 test('mobile satellite receives REAL imagery, GPS updates retain map canvas and reload retains hole',async({page,context},info)=>{
+ // Two complete real-network map loads can each use the 18-second fallback timer.
+ test.setTimeout(90000);
  await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:tee.lat,longitude:tee.lng,accuracy:5});
  await page.addInitScript(d=>localStorage.setItem('golfTarget:grace-cc:Lake:1:downloadedCourse',JSON.stringify(d)),data);
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/');const field=page.getByLabel('GPS 실전 캐디').first();
  // A real external imagery load, no mocked tiles and no screenshot-only pass.
  await expect(field.getByTestId('map-status')).toContainText('위성영상 표시됨',{timeout:40000});
- await expect(field.locator('.courseMarker')).toHaveCount(7);
+ const rasterFallback=await field.locator('.imageTileMap').count();
+ if(rasterFallback){await expect(field.locator('.tileOverlay circle')).toHaveCount(3);expect(await field.locator('.imageTileMap>img').evaluateAll(xs=>xs.every(x=>x.complete&&x.naturalWidth===256))).toBe(true);}else await expect(field.locator('.courseMarker')).toHaveCount(7);
  const mapView=field.getByLabel('실제 인터랙티브 코스 지도');const initialCenter=await mapView.getAttribute('data-view-center');
- const stageBox=await field.locator('.holeMapStage').boundingBox();for(const label of ['티','그린','뒤']){const box=await field.locator('.courseMarker').filter({hasText:new RegExp('^'+label+'$')}).boundingBox();expect(box.y).toBeGreaterThanOrEqual(stageBox.y);expect(box.y+box.height).toBeLessThanOrEqual(stageBox.y+stageBox.height-22);}
- const before=await field.locator('canvas').count();await field.getByRole('button',{name:'GPS 현재위치',exact:true}).click();await expect(field.getByText(/GPS ±5m/)).toBeVisible();
+ const stageBox=await field.locator('.holeMapStage').boundingBox();if(!rasterFallback)for(const label of ['티','그린','뒤']){const box=await field.locator('.courseMarker').filter({hasText:new RegExp('^'+label+'$')}).boundingBox();expect(box.y).toBeGreaterThanOrEqual(stageBox.y);expect(box.y+box.height).toBeLessThanOrEqual(stageBox.y+stageBox.height-22);}
+ const before=rasterFallback?0:await field.locator('canvas').count();await field.getByRole('button',{name:'GPS 현재위치',exact:true}).click();await expect(field.getByText(/GPS ±5m/)).toBeVisible();
  await expect(field.locator('.fieldMode button')).toHaveCount(3);await expect(field.getByText(/벙커/).first()).toBeAttached();
  if(before){await field.locator('canvas').evaluate(c=>c.dataset.stable='yes');await field.getByRole('button',{name:'실시간 GPS 시작',exact:true}).click();await context.setGeolocation({latitude:35.6641,longitude:128.648,accuracy:6});await expect(field.getByText(/GPS ±6m/)).toBeVisible();await expect(field.locator('canvas')).toHaveAttribute('data-stable','yes');expect(await mapView.getAttribute('data-view-center')).toBe(initialCenter);}
  await field.getByRole('button',{name:'홀 전체 기본보기'}).click();await page.reload();await expect(page.getByLabel('GPS 실전 캐디').first().locator('.fieldMode button')).toHaveCount(3);expect(errors).toEqual([]);
@@ -29,7 +32,7 @@ test('mobile satellite receives REAL imagery, GPS updates retain map canvas and 
 });
 test('changing hole never carries over previous geometry',async({page})=>{
  await page.addInitScript(d=>localStorage.setItem('golfTarget:grace-cc:Lake:1:downloadedCourse',JSON.stringify(d)),data);await page.goto('/');await expect(page.getByLabel('GPS 실전 캐디').first().locator('.fieldMode button')).toHaveCount(3);
- await page.locator('.stripHoles').first().getByRole('button',{name:'2',exact:true}).click();await expect(page.getByLabel('GPS 실전 캐디').first().locator('.fieldMode button')).toHaveCount(0);await expect(page.locator('.coursePanel').first().locator('.panelTitle')).toContainText('2H');
+ await page.locator('.stripHoles').first().getByRole('button',{name:'2',exact:true}).click();await expect(page.getByLabel('개별 홀 지도 자료 대기')).toBeVisible();await expect(page.locator('.coursePanel').first().locator('.fieldMode button')).toHaveCount(0);await expect(page.locator('.coursePanel').first().locator('.panelTitle')).toContainText('2H');
 });
 test('invalid tile input is rejected without external fetch',async({request})=>{expect((await request.get('/api/satellite-tile?z=200&x=0&y=0')).status()).toBe(400)});
 test('WebGL unavailable uses REAL image tiles with geometry and zoom reset',async({page})=>{

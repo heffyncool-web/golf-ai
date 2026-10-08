@@ -7,6 +7,15 @@
   "execution": "Foreground development + existing GitHub CI. No unattended 24-hour worker is provisioned.",
   "tasks": [
     {
+      "id": "P0-10",
+      "title": "첨부 원본 기준 개별 홀 화면",
+      "gate": "GREEN",
+      "state": "SOFTWARE_VERIFIED_REAL_HOLE_SIGNOFF_PENDING",
+      "scope": "Lake1H/Mountain1H original reference image; not georeferenced; no repeated first-hole image on other holes",
+      "next": "Remaining actual individual-hole imagery and coordinates, protected deployed UI and field GPS validation",
+      "evidence": "108 regression scenarios passed; remaining 2 real-network reload scenarios passed after correcting 30s overall test timeout to 90s (two 18s fallback cycles). Production build and local production UI passed. Protected deployed UI and physical GPS remain pending."
+    },
+    {
       "id": "P0-01",
       "title": "기존 운영·소스·체크포인트",
       "gate": "GREEN",
