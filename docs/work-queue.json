@@ -41,6 +41,14 @@
       "dependency": "P0-03 and physical field validation"
     },
     {
+      "id": "P0-09",
+      "title": "GPS·외부 타일 서버 없이도 실제 골프장 위성 미리보기",
+      "gate": "GREEN",
+      "state": "SOFTWARE_VERIFIED_REAL_HOLE_SIGNOFF_PENDING",
+      "evidence": "108/108 regression, 0 flaky. GPS APIs blocked + external tiles blocked: cached real imagery, zoom/reset/reload passed. Actual mapped course bounds fitted without location.",
+      "dependency": "Individual hole geometry for hole-level display; protected deployed UI permission for deployed acceptance"
+    },
+    {
       "id": "P0-08",
       "title": "48816.png 사전 홀 공략·위성지도/분석 병렬 구성",
       "gate": "GREEN",

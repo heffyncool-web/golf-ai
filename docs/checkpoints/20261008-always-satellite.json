@@ -1,0 +1,35 @@
+{
+  "previousRemoteCommit": "cafd0d29b17b46e26ffba116f784ac95d233ba98",
+  "localRollbackTag": "checkpoint/pre-always-satellite-20261008",
+  "goal": "GPS/방문 없이 선택 골프장 위성영상 즉시 표시",
+  "implementation": [
+    "Actual course boundary fallback extent",
+    "4 real georeferenced cached imagery tiles, 72811 bytes",
+    "No GPS permission required for map preview",
+    "Local preview remains visible when external tile service is blocked",
+    "Entire viewport readiness instead of single-tile success",
+    "Data settings moved below analysis, existing controls retained"
+  ],
+  "regression": {
+    "startTime": "2026-10-08T11:47:59.187Z",
+    "duration": 300625.25899999996,
+    "expected": 108,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "build": "PASS",
+  "gpsFreeAndExternalServerBlocked": "PASS on desktop and mobile, local imagery HTTP 200, preview zoom/reset/reload tested",
+  "source": [
+    "https://www.openstreetmap.org/way/523105765",
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer?f=pjson"
+  ],
+  "imageryScope": "Course overview only, explicitly not numbered hole geometry",
+  "p0Overall": "NOT_COMPLETE",
+  "remaining": [
+    "Verified individual hole geometry and course name/number matching",
+    "Physical GPS verification",
+    "Protected deployment UI access remains unavailable on current connection"
+  ],
+  "production": "UNCHANGED"
+}
