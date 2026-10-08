@@ -530,3 +530,17 @@ test("fresh v6 state renders after reload on mobile", async ({ page }) => {
   await page.locator(".nav").getByRole("button",{name:"장비/클럽",exact:true}).click();
   await expect(page.getByLabel("Driver")).toHaveValue("225");
 });
+
+
+test("mobile primary hole view shows satellite-style course instead of street map", async ({ page }) => {
+  await page.setViewportSize({width:412,height:915});
+  await page.goto("/");
+  const map=page.locator(".mainSatelliteMap").first();
+  await expect(map).toBeVisible();
+  const bg=await map.evaluate(el=>getComputedStyle(el).backgroundImage);
+  expect(bg).toContain("data:image/jpeg;base64");
+  await expect(page.getByText("위성형 공략도 · 홀 정보 우선 표시").first()).toBeVisible();
+  await expect(page.getByRole("button",{name:"오픈 코스 데이터 자동 불러오기"})).toHaveCount(0);
+  await page.locator(".coursePanel").first().getByRole("button",{name:"거리 측정"}).click();
+  await expect(page.getByRole("button",{name:"오픈 코스 데이터 자동 불러오기"}).first()).toBeVisible();
+});
