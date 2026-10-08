@@ -49,5 +49,5 @@ test('course selectors remain separate and all nine buttons fit their strip',asy
  await page.goto('/');const strips=page.locator('.courseStrip');await expect(strips).toHaveCount(2);
  for(let i=0;i<2;i++){const bounds=await strips.nth(i).boundingBox();for(const button of await strips.nth(i).locator('button').all()){const b=await button.boundingBox();expect(b.x).toBeGreaterThanOrEqual(bounds.x);expect(b.x+b.width).toBeLessThanOrEqual(bounds.x+bounds.width+1);}}
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- await info.attach('updated-dashboard',{body:await page.screenshot({fullPage:true,path:info.project.name.startsWith('desktop')?'/workspace/onboarding/golf-ai-updated-desktop.png':'/workspace/onboarding/golf-ai-updated-mobile.png'}),contentType:'image/png'});
+ await info.attach('updated-dashboard',{body:await page.screenshot({fullPage:true,path:info.outputPath('updated-dashboard.png')}),contentType:'image/png'});
 });

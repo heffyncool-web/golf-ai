@@ -10,6 +10,6 @@ test('individual reference renders original image without GPS, resets zoom and s
  await page.reload();await expect(map).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
  await info.attach('individual-hole-reference',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  if(info.project.name.startsWith('desktop')){const actions=await panel.locator('.panelActions').boundingBox(),bar=await page.locator('.roundBar').boundingBox();expect(actions.y+actions.height).toBeLessThanOrEqual(bar.y+1);}
- if(info.project.name.startsWith('desktop'))await page.screenshot({path:'/workspace/scratch/5283797156dc/golf-ai-individual-holes.png'});
+ if(info.project.name.startsWith('desktop'))await page.screenshot({path:info.outputPath('individual-holes.png')});
  await page.locator('.stripHoles').first().getByRole('button',{name:'2',exact:true}).click();await expect(panel.getByLabel('개별 홀 지도 자료 대기')).toBeVisible();await expect(panel.locator('.referenceHolePicture')).toHaveCount(0);
 });
