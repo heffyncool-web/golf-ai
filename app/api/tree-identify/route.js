@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { koreanTreeName } from "../../../treeMeasurements";
+import { koreanTreeName } from "../../treeMeasurements";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
