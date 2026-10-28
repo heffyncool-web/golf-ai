@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useMemo,useRef,useState} from "react";
 import {estimatedMeasurement,pixelDistance,planarPolygonArea} from "../../surveyGeometry";
+import {survey2dDxf} from "../../surveyDxf";
 
 const themes={background:"#f4f7fb",box:"#fff",line:"#d7e2ee",dark:"#123754",muted:"#61778a",accent:"#1669b1"};
 const modes=[
@@ -23,12 +24,13 @@ function readImage(file){
 export default function SurveyCamera(){
  const camera=useRef(null),stream=useRef(null),frozen=useRef(""),svg=useRef(null);
  const [active,setActive]=useState(false),[image,setImage]=useState("");
+ const [imageAspect,setImageAspect]=useState(1);
  const [mode,setMode]=useState("distance");
  const [stage,setStage]=useState("reference"),[reference,setReference]=useState([]),[target,setTarget]=useState([]);
  const [known,setKnown]=useState("1"),[status,setStatus]=useState("카메라를 켜서 건물·공간을 비추세요. 측정 시에는 프레임을 고정하거나 사진을 불러옵니다.");
  const selected=modes.find(x=>x.id===mode);
  const areaMode=["area","building","room"].includes(mode);
- const computed=useMemo(()=>estimatedMeasurement({kind:areaMode?"area":"distance",reference,referenceLength:Number(known),points:target}),[areaMode,reference,target,known]);
+ const computed=useMemo(()=>estimatedMeasurement({kind:areaMode?"area":"distance",reference,referenceLength:Number(known),points:target,imageAspectRatio:imageAspect}),[areaMode,reference,target,known,imageAspect]);
  const allPoints=stage==="reference"?reference:target;
  useEffect(()=>()=>{stream.current?.getTracks().forEach(t=>t.stop());if(frozen.current)URL.revokeObjectURL(frozen.current);},[]);
  async function start(){
@@ -41,17 +43,17 @@ export default function SurveyCamera(){
  }
  function stop(){stream.current?.getTracks().forEach(t=>t.stop());stream.current=null;if(camera.current)camera.current.srcObject=null;setActive(false);}
  function clearMeasurements(){setReference([]);setTarget([]);setStage("reference");}
- function replaceImage(url){if(frozen.current)URL.revokeObjectURL(frozen.current);frozen.current=url;setImage(url);clearMeasurements();}
+ function replaceImage(url,width=1,height=1){if(frozen.current)URL.revokeObjectURL(frozen.current);frozen.current=url;setImage(url);setImageAspect(width/Math.max(1,height));clearMeasurements();}
  function freeze(){
   if(!camera.current?.videoWidth)return;
   const canvas=document.createElement("canvas"),v=camera.current;
   canvas.width=v.videoWidth;canvas.height=v.videoHeight;
   canvas.getContext("2d").drawImage(v,0,0);
-  canvas.toBlob(blob=>{if(blob){const u=URL.createObjectURL(blob);replaceImage(u);setStatus("현재 프레임이 고정되었습니다. 화면 위에 기준 길이와 측정 지점을 지정하세요.");}},"image/jpeg",.93);
+  canvas.toBlob(blob=>{if(blob){const u=URL.createObjectURL(blob);replaceImage(u,canvas.width,canvas.height);setStatus("현재 프레임이 고정되었습니다. 화면 위에 기준 길이와 측정 지점을 지정하세요.");}},"image/jpeg",.93);
  }
  async function upload(file){
   if(!file)return;
-  try{const obj=await readImage(file);replaceImage(obj.url);setStatus("이미지를 불러왔습니다. 동일 평면의 기준물로 보정하세요.");}
+  try{const obj=await readImage(file);replaceImage(obj.url,obj.width,obj.height);setStatus("이미지를 불러왔습니다. 동일 평면의 기준물로 보정하세요.");}
   catch(e){setStatus(e.message);}
  }
  function clickAt(e){
@@ -70,6 +72,16 @@ export default function SurveyCamera(){
   const blob=new Blob([JSON.stringify(record,null,2)],{type:"application/json"});
   const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="survey-reference-"+Date.now()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
  }
+ function exportDxf(){
+   try{
+     const content=survey2dDxf({reference,referenceLength:Number(known),points:target,imageAspectRatio:imageAspect,closed:areaMode});
+     const u=URL.createObjectURL(new Blob([content],{type:"application/dxf;charset=utf-8"}));
+     const a=document.createElement("a");a.href=u;a.download="camera-2d-reference-"+Date.now()+".dxf";a.click();
+     setTimeout(()=>URL.revokeObjectURL(u),1000);
+     setStatus("2D 사진 참고 측정 DXF가 저장되었습니다. 원근·렌즈 왜곡은 보정되지 않았으므로 CAD 도면을 현장 실측으로 검증하세요.");
+   }catch(e){setStatus("DXF 저장 불가: "+e.message);}
+ }
+
  function changeMode(id){setMode(id);clearMeasurements();}
  const samePlaneWarning="기준물과 측정 대상이 같은 평면·거리에 있어야 합니다. 원근과 렌즈 왜곡을 보정하지 않은 화면상 참고값이며, 법정 측량이나 감정평가 확정 규격으로 사용하지 마세요.";
  const format=computed?.value==null?"측정 준비":computed.value.toLocaleString("ko-KR",{maximumFractionDigits:2})+" "+computed.unit;
@@ -122,6 +134,7 @@ export default function SurveyCamera(){
       <button style={button} type="button" onClick={()=>{setTarget([]);setStage("target");}} disabled={reference.length<2}>측정 점 다시 선택</button>
       <button style={button} type="button" onClick={clearMeasurements}>기준부터 초기화</button>
       <button style={button} type="button" onClick={exportJson} disabled={computed?.value==null}>측정 기록 저장</button>
+      <button style={button} type="button" onClick={exportDxf} disabled={computed?.value==null}>2D CAD DXF 저장</button>
      </div>
     </div>
    </div>
