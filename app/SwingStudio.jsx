@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { inferPhaseTimeline, handHeight, coachingFromDifferences, newPracticeEntry, CAMERA_HINTS } from "./swingTimeline";
 
 const PHASES = ["어드레스", "테이크백", "백스윙 탑", "전환", "다운스윙", "임팩트", "피니시"];
 const LINKS = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
@@ -56,6 +57,7 @@ export default function SwingStudio({standalone=false}){
   const ownCanvas=useRef(null),proCanvas=useRef(null);
   const cameraStream=useRef(null),recorder=useRef(null),pieces=useRef([]);
   const poseModel=useRef(null);
+  const lastInferenceTime=useRef(0);
   const [cameraOn,setCameraOn]=useState(false),[recording,setRecording]=useState(false);
   const [cameraFps,setCameraFps]=useState("미확인");
   const [status,setStatus]=useState("영상 파일을 선택하거나 웹 카메라를 켜세요.");
@@ -65,6 +67,9 @@ export default function SwingStudio({standalone=false}){
   const [marks,setMarks]=useState({mine:{},pro:{}});
   const [analysis,setAnalysis]=useState({mine:null,pro:null});
   const [loadingPose,setLoadingPose]=useState(false);
+  const [autoWorking,setAutoWorking]=useState(false),[scanReport,setScanReport]=useState({mine:null,pro:null});
+  const [sessions,setSessions]=useState([]);
+  useEffect(()=>{try{const rows=JSON.parse(localStorage.getItem("golfSwingCoachSessionsV1")||"[]");if(Array.isArray(rows))setSessions(rows.slice(0,60));}catch{}},[]);
   useEffect(()=>()=>{Object.values(fileUrls.current).forEach(u=>{if(u)URL.revokeObjectURL(u);});cameraStream.current?.getTracks().forEach(t=>t.stop());try{if(recorder.current?.state==="recording")recorder.current.stop();}catch{}poseModel.current?.close?.();},[]);
   useEffect(()=>{[ownVideo.current,proVideo.current].forEach(v=>{if(v)v.playbackRate=speed;});},[speed,mine,pro]);
   function selectVideo(kind,file){
@@ -141,7 +146,8 @@ export default function SwingStudio({standalone=false}){
         const fileset=await mod.FilesetResolver.forVisionTasks(MODEL_WASM);
         poseModel.current=await mod.PoseLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:MODEL_ASSET},runningMode:"VIDEO",numPoses:1,minPoseDetectionConfidence:.5,minTrackingConfidence:.5});
       }
-      const result=poseModel.current.detectForVideo(video,performance.now());
+      lastInferenceTime.current=Math.max(performance.now(),lastInferenceTime.current+1);
+      const result=poseModel.current.detectForVideo(video,lastInferenceTime.current);
       const landmarks=result.landmarks?.[0];
       if(!landmarks){setAnalysis(prev=>({...prev,[kind]:null}));clearPose(canvas);setStatus("인물 관절을 찾지 못했습니다. 전신이 화면에 나오게 촬영해 주세요.");return;}
       drawPose(canvas,video,landmarks);
@@ -150,6 +156,75 @@ export default function SwingStudio({standalone=false}){
     }catch(e){setStatus("관절 분석 모델 연결 실패. 네트워크 연결과 브라우저 지원을 확인하세요.");}
     finally{setLoadingPose(false);}
   }
+
+  async function ensurePose(){
+    if(poseModel.current)return poseModel.current;
+    const mod=await import(/* webpackIgnore: true */ "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/+esm");
+    const fileset=await mod.FilesetResolver.forVisionTasks(MODEL_WASM);
+    poseModel.current=await mod.PoseLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:MODEL_ASSET},runningMode:"VIDEO",numPoses:1,minPoseDetectionConfidence:.5,minTrackingConfidence:.5});
+    return poseModel.current;
+  }
+  function seekTo(video,t){
+    return new Promise((resolve,reject)=>{
+      if(!video||!Number.isFinite(video.duration)){reject(new Error("영상 길이를 확인할 수 없습니다."));return;}
+      const target=Math.max(0,Math.min(video.duration-.02,t));
+      if(Math.abs(target-video.currentTime)<.004){resolve();return;}
+      const timeout=setTimeout(()=>{video.removeEventListener("seeked",done);reject(new Error("프레임을 이동할 수 없습니다."));},3500);
+      function done(){clearTimeout(timeout);resolve();}
+      video.addEventListener("seeked",done,{once:true});
+      video.currentTime=target;
+    });
+  }
+  async function detectTimeline(kind){
+    const video=kind==="mine"?ownVideo.current:proVideo.current;
+    if(!video||!Number.isFinite(video.duration)||video.duration<=0){setStatus("먼저 재생 가능한 영상을 불러오세요.");return;}
+    if(autoWorking||loadingPose)return;
+    setAutoWorking(true);video.pause();setStatus("동영상에서 스윙 단계 후보를 탐색하고 있습니다.");
+    const oldTime=video.currentTime;
+    try{
+      const model=await ensurePose();
+      const times=[];
+      const duration=Math.min(video.duration,20);
+      const count=Math.max(15,Math.min(65,Math.round(duration*7)));
+      for(let i=0;i<count;i++){
+        const t=(.01+(i/(count-1))*.98)*duration;
+        await seekTo(video,t);
+        lastInferenceTime.current=Math.max(performance.now(),lastInferenceTime.current+1);
+        const result=model.detectForVideo(video,lastInferenceTime.current);
+        const pose=handHeight(result.landmarks?.[0]);
+        if(pose)times.push({time:video.currentTime,pose});
+      }
+      const inferred=inferPhaseTimeline(times);
+      setScanReport(prev=>({...prev,[kind]:inferred}));
+      if(Object.keys(inferred.marks).length){
+        setMarks(prev=>({...prev,[kind]:{...prev[kind],...inferred.marks}}));
+        setStatus((kind==="mine"?"내 영상":"프로 영상")+"에서 스윙 단계를 추정했습니다. 임팩트 시점과 단계별 위치를 영상으로 재확인하세요.");
+      }else{
+        setStatus(inferred.reason);
+      }
+    }catch(e){setStatus("자동 단계 탐색 실패: "+(e?.message||"영상 디코딩 및 AI 모델을 확인하세요."));}
+    finally{await seekTo(video,oldTime).catch(()=>{});setAutoWorking(false);}
+  }
+  function savePractice(){
+    if(!canLog){setStatus("동일한 스윙 단계에서 내 영상과 참고 영상을 분석한 후 저장해 주세요.");return;}
+    const entry=newPracticeEntry({club,angle,phase,coaching:recommended,metrics:compare,reference:"사용자가 직접 선택한 참고 영상",time:analysis.mine?.time});
+    try{
+      const next=[entry,...sessions].slice(0,60);
+      localStorage.setItem("golfSwingCoachSessionsV1",JSON.stringify(next));
+      setSessions(next);setStatus("연습 분석 기록을 이 기기에 저장했습니다. 영상 원본은 저장되지 않습니다.");
+    }catch{setStatus("브라우저 저장 공간을 확인하세요. 기록을 저장하지 못했습니다.");}
+  }
+  function exportPractice(){
+    const text=JSON.stringify({version:1,records:sessions},null,2);
+    const url=URL.createObjectURL(new Blob([text],{type:"application/json"}));
+    const a=document.createElement("a");a.href=url;a.download="golf-swing-practice.json";a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function deletePractice(id){
+    const next=sessions.filter(x=>x.id!==id);
+    try{localStorage.setItem("golfSwingCoachSessionsV1",JSON.stringify(next));setSessions(next);}catch{setStatus("저장된 연습 기록을 삭제하지 못했습니다.");}
+  }
+
   const compare=useMemo(()=>{
     const a=analysis.mine,b=analysis.pro;if(!a||!b||a.phase!==b.phase)return [];
     return METRICS.map(([key,label,unit])=>{
@@ -158,7 +233,9 @@ export default function SwingStudio({standalone=false}){
     });
   },[analysis]);
   const largest=compare.filter(x=>x.diff!=null).sort((a,b)=>b.diff-a.diff)[0];
-  const coaching=largest&&largest.diff>=7?largest.label+"이 비교 영상과 약 "+largest.diff+"° 다릅니다. 같은 촬영 각도에서 해당 동작부터 반복해 보세요.":"비교 가능한 관절각의 큰 차이가 확인되지 않았습니다. 촬영 각도와 다른 스윙 단계도 점검하세요.";
+  const recommended=coachingFromDifferences(compare,phase,club,angle);
+  const coaching=recommended.summary;
+  const canLog=Boolean(analysis.mine&&analysis.pro&&analysis.mine.phase===analysis.pro.phase&&largest);
   function speakOne(){if(!("speechSynthesis" in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(coaching);u.lang="ko-KR";window.speechSynthesis.speak(u);}
   const videoFrame=(kind,src,videoRef,canvasRef)=>(
     <div style={box}>
@@ -178,6 +255,7 @@ export default function SwingStudio({standalone=false}){
         <button type="button" style={btn} disabled={loadingPose||!src} onClick={()=>analyzeFrame(kind)}>{loadingPose?"분석 중":"현재 프레임 AI 분석"}</button>
       </div>
       {src&&<a href={src} download={kind==="mine"?"my-golf-swing":"reference-golf-swing"} style={{fontSize:12,display:"inline-block",marginTop:8}}>영상 파일 저장</a>}
+      {scanReport[kind]&&<p style={{fontSize:12,color:"#37566b"}}>자동 단계 추정: {scanReport[kind].confidence==="medium"?"보통":scanReport[kind].confidence==="low"?"낮음":"정보 부족"} · {scanReport[kind].reason}</p>}
       {analysis[kind]&&<p style={{fontSize:12,color:"#37566b"}}>분석 위치 {analysis[kind].time.toFixed(2)}초 · {analysis[kind].phase} · 2D 추정</p>}
     </div>
   );
@@ -197,6 +275,7 @@ export default function SwingStudio({standalone=false}){
       </div>
       <p style={{fontSize:12,color:"#516875",marginBottom:0}}>폴드7 기본 카메라: FHD 240fps / UHD 120fps 촬영 가능. 여기서 선택한 fps는 영상 파일의 실제 속도를 자동 검증한 값이 아닙니다. 삼성 카메라에서 이미 30fps 슬로모션으로 저장한 파일이면 30fps를 선택하세요.</p>
     </div>
+    <p style={{background:"#fff8e8",padding:"10px 12px",borderRadius:8,fontSize:13}}><b>촬영 위치:</b> {CAMERA_HINTS[angle]}</p>
     <div style={{...box,marginBottom:12}}>
       <h3 style={{margin:"0 0 8px"}}>AI 카메라 · 웹 직접 촬영</h3>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"start"}}>
@@ -216,6 +295,8 @@ export default function SwingStudio({standalone=false}){
     </div>
     <div style={{...box,marginTop:12}}>
       <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:10}}>
+        <button style={btn} type="button" disabled={autoWorking||loadingPose||!mine} onClick={()=>detectTimeline("mine")}>{autoWorking?"자동 단계 탐색 중":"내 스윙 단계 자동 찾기"}</button>
+        <button style={btn} type="button" disabled={autoWorking||loadingPose||!pro} onClick={()=>detectTimeline("pro")}>프로 영상 단계 자동 찾기</button>
         <button style={btn} type="button" onClick={goMarked}>선택 단계로 맞추기</button>
         <button style={btn} type="button" onClick={playBoth}>두 영상 동시에 재생</button>
         <button style={btn} type="button" onClick={pauseBoth}>두 영상 정지</button>
@@ -229,7 +310,18 @@ export default function SwingStudio({standalone=false}){
         <><div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
           <thead><tr><th style={{textAlign:"left"}}>분석 항목</th><th>내 자세</th><th>프로 영상</th><th>차이</th></tr></thead>
           <tbody>{compare.map(r=><tr key={r.key} style={{borderTop:"1px solid #dfe6eb"}}><td style={{padding:"9px 2px"}}>{r.label}</td><td style={{textAlign:"center"}}>{r.mine==null?"미검출":r.mine+r.unit}</td><td style={{textAlign:"center"}}>{r.pro==null?"미검출":r.pro+r.unit}</td><td style={{textAlign:"center"}}>{r.diff==null?"-":r.diff+r.unit}</td></tr>)}</tbody>
-        </table></div><div style={{background:"#f1f8f4",padding:12,borderRadius:8,marginTop:10}}><b>이번 스윙의 우선 확인 항목 1개</b><p style={{margin:"6px 0"}}>{coaching}</p><button type="button" onClick={speakOne} style={btn}>한 문장 음성 코칭</button></div></>}
+        </table></div><div style={{background:"#f1f8f4",padding:12,borderRadius:8,marginTop:10}}><b>이번 스윙의 우선 확인 항목 1개</b><p style={{margin:"6px 0"}}>{coaching}</p><p style={{margin:"6px 0"}}><b>추천 연습:</b> {recommended.drill}</p><button type="button" onClick={speakOne} style={btn}>한 문장 음성 코칭</button> <button type="button" onClick={savePractice} style={btn}>오늘의 교정 미션 저장</button></div></>}
+
+      <div style={{marginTop:15,padding:12,borderRadius:8,background:"#f7faff"}}>
+        <h4 style={{margin:"0 0 8px"}}>스윙 개선 이력 · 로컬 저장</h4>
+        <p style={{fontSize:12,color:"#536b7b"}}>관절 각도 차이와 연습 미션만 기기에 저장합니다. 동영상 원본은 세션이 끝나면 유지되지 않습니다.</p>
+        <button style={btn} type="button" disabled={!sessions.length} onClick={exportPractice}>분석 이력 JSON 내려받기</button>
+        {sessions.length===0?<p style={{fontSize:13}}>저장된 연습 기록이 없습니다.</p>:sessions.slice(0,10).map(x=><div key={x.id} style={{borderTop:"1px solid #d7e2ed",padding:"9px 0",fontSize:13}}>
+          <b>{x.createdAt.slice(0,10)} · {x.club} · {x.phase} · {x.priority}</b>
+          <p style={{margin:"4px 0"}}>{x.summary}</p><small>다음 연습: {x.drill}</small>
+          <div><button type="button" style={{...btn,padding:"4px 8px",marginTop:5}} onClick={()=>deletePractice(x.id)}>이 기록 삭제</button></div>
+        </div>)}
+      </div>
       <p style={{color:"#6b4d21",fontSize:12,marginBottom:0}}>분석은 단일 카메라 영상의 2D 자세 추정입니다. 절대 각도, 골반 실제 회전량, 체중 이동, 샤프트·클럽페이스, 타점, 생크·뒤땅의 원인은 이 값만으로 판정할 수 없습니다. 프로 영상도 개인 체형과 샷 목적에 따라 자세가 다를 수 있습니다.</p>
     </section>
   </div>;
