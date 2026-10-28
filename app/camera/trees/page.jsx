@@ -51,7 +51,7 @@ export default function TreeCamera(){
      const response=await fetch("/api/tree-identify",{method:"POST",body:fd});
      const json=await response.json();
      if(!response.ok)throw new Error(json.error||"수종 분석 실패");
-     setResult(json);setMessage(json.candidates?.length?"수종 추정 완료. 잎과 수피를 가까이 찍으면 판별력이 높아질 수 있습니다.":"식물 후보가 확인되지 않았습니다. 다시 촬영하세요.");
+     setResult({...json,capturedAt:new Date().toISOString()});setMessage(json.candidates?.length?"수종 추정 완료. 잎과 수피를 가까이 찍으면 판별력이 높아질 수 있습니다.":"식물 후보가 확인되지 않았습니다. 다시 촬영하세요.");
      if(source==="camera"&&!photo){
        const url=URL.createObjectURL(blob);if(blobUrl.current)URL.revokeObjectURL(blobUrl.current);
        blobUrl.current=url;setPhoto(url);
@@ -72,7 +72,7 @@ export default function TreeCamera(){
  const upload=async(file)=>{
    if(!file)return;if(!["image/jpeg","image/png"].includes(file.type)){setMessage("JPEG 또는 PNG를 선택하세요.");return;}
    if(blobUrl.current)URL.revokeObjectURL(blobUrl.current);
-   const url=URL.createObjectURL(file);blobUrl.current=url;setPhoto(url);setPoints([]);
+   const url=URL.createObjectURL(file);blobUrl.current=url;setPhoto(url);setPoints([]);setResult(null);
    const converted=await new Promise(resolve=>{
      const img=new Image();
      img.onload=()=>{const c=document.createElement("canvas");c.width=Math.min(1200,img.naturalWidth);c.height=Math.round(c.width*img.naturalHeight/img.naturalWidth);c.getContext("2d").drawImage(img,0,0,c.width,c.height);c.toBlob(resolve,"image/jpeg",.87);};
@@ -112,7 +112,7 @@ export default function TreeCamera(){
        <video ref={video} playsInline muted autoPlay style={{display:camera?"block":"none",width:"100%",maxHeight:500,objectFit:"contain"}}/>
        {!camera&&<div style={{minHeight:160,display:"grid",placeItems:"center",color:"#b5c6d1"}}>카메라를 시작하면 실시간 미리보기가 나타납니다.</div>}
        {camera&&<div style={{position:"absolute",left:10,right:10,bottom:10,background:"#0d2638df",color:"#fff",padding:"9px 11px",borderRadius:8,fontSize:13}}>
-          {busyState?"수종 분석 중…":primary?((primary.name||"수종 추정")+(primary.score==null?"":(" · AI 점수 "+Math.round(primary.score*100)+"%"))):"수종 미확인 · 분석을 눌러주세요"}
+          {busyState?"수종 분석 중…":primary?((primary.score!=null&&primary.score<.5?"신뢰도 낮음 · 재촬영 권장":"마지막 분석 · "+(primary.name||"수종 추정"))+(primary.score==null?"":(" · 모델 점수 "+Math.round(primary.score*100)+"%"))):"수종 미확인 · 분석을 눌러주세요"}
        </div>}
      </div>
      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
