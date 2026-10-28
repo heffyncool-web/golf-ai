@@ -58,6 +58,8 @@ export default function SwingStudio({standalone=false}){
   const cameraStream=useRef(null),recorder=useRef(null),pieces=useRef([]);
   const poseModel=useRef(null);
   const lastInferenceTime=useRef(0);
+  const autoCapture=useRef({enabled:false,raf:0,lastHand:null,stable:0,lastMovement:0,recordStarted:0});
+  const [autoCaptureOn,setAutoCaptureOn]=useState(false);
   const [cameraOn,setCameraOn]=useState(false),[recording,setRecording]=useState(false);
   const [cameraFps,setCameraFps]=useState("미확인");
   const [status,setStatus]=useState("영상 파일을 선택하거나 웹 카메라를 켜세요.");
@@ -70,7 +72,7 @@ export default function SwingStudio({standalone=false}){
   const [autoWorking,setAutoWorking]=useState(false),[scanReport,setScanReport]=useState({mine:null,pro:null});
   const [sessions,setSessions]=useState([]);
   useEffect(()=>{try{const rows=JSON.parse(localStorage.getItem("golfSwingCoachSessionsV1")||"[]");if(Array.isArray(rows))setSessions(rows.slice(0,60));}catch{}},[]);
-  useEffect(()=>()=>{Object.values(fileUrls.current).forEach(u=>{if(u)URL.revokeObjectURL(u);});cameraStream.current?.getTracks().forEach(t=>t.stop());try{if(recorder.current?.state==="recording")recorder.current.stop();}catch{}poseModel.current?.close?.();},[]);
+  useEffect(()=>()=>{autoCapture.current.enabled=false;if(autoCapture.current.raf)cancelAnimationFrame(autoCapture.current.raf);Object.values(fileUrls.current).forEach(u=>{if(u)URL.revokeObjectURL(u);});cameraStream.current?.getTracks().forEach(t=>t.stop());try{if(recorder.current?.state==="recording")recorder.current.stop();}catch{}poseModel.current?.close?.();},[]);
   useEffect(()=>{[ownVideo.current,proVideo.current].forEach(v=>{if(v)v.playbackRate=speed;});},[speed,mine,pro]);
   function selectVideo(kind,file){
     if(!file)return;
@@ -93,6 +95,7 @@ export default function SwingStudio({standalone=false}){
     }catch(e){setStatus("카메라 연결 실패: 권한·HTTPS·다른 앱의 사용 여부를 확인하세요.");}
   }
   function stopCamera(){
+    autoCapture.current.enabled=false;if(autoCapture.current.raf)cancelAnimationFrame(autoCapture.current.raf);setAutoCaptureOn(false);
     if(recorder.current?.state==="recording")recorder.current.stop();
     cameraStream.current?.getTracks().forEach(t=>t.stop());cameraStream.current=null;
     if(liveVideo.current)liveVideo.current.srcObject=null;
@@ -175,6 +178,61 @@ export default function SwingStudio({standalone=false}){
       video.currentTime=target;
     });
   }
+
+  async function toggleAutoCapture(){
+    if(autoCapture.current.enabled){
+      autoCapture.current.enabled=false;
+      if(autoCapture.current.raf)cancelAnimationFrame(autoCapture.current.raf);
+      setAutoCaptureOn(false);
+      setStatus("자동 스윙 녹화가 중지되었습니다.");
+      return;
+    }
+    if(!cameraStream.current||!liveVideo.current){setStatus("카메라를 먼저 시작하세요.");return;}
+    if(typeof MediaRecorder==="undefined"){setStatus("브라우저 녹화 기능을 지원하지 않습니다.");return;}
+    try{await ensurePose();}catch{setStatus("자세 인식 모델에 연결할 수 없어 자동 촬영을 시작하지 못했습니다.");return;}
+    autoCapture.current={enabled:true,raf:0,lastHand:null,stable:0,lastMovement:0,recordStarted:0};
+    setAutoCaptureOn(true);setStatus("전신을 프레임에 넣고 어드레스 후 스윙하세요. 움직임 감지로 자동 녹화합니다.");
+    let lastScan=0;
+    const loop=()=>{
+      const state=autoCapture.current,now=performance.now();
+      if(!state.enabled||!cameraStream.current||!liveVideo.current)return;
+      if(document.visibilityState!=="visible"){
+        state.enabled=false;setAutoCaptureOn(false);
+        if(recorder.current?.state==="recording")stopRecording();
+        setStatus("카메라 화면이 숨겨져 자동 스윙 녹화가 중단되었습니다.");
+        return;
+      }
+      if(now-lastScan>125&&liveVideo.current.readyState>=2){
+        lastScan=now;
+        try{
+          lastInferenceTime.current=Math.max(now,lastInferenceTime.current+1);
+          const detected=poseModel.current.detectForVideo(liveVideo.current,lastInferenceTime.current);
+          const pose=handHeight(detected.landmarks?.[0]);
+          if(pose){
+            const prev=state.lastHand;
+            state.lastHand=pose.hand;
+            if(prev!=null){
+              const moving=Math.abs(pose.hand-prev)>.02;
+              const active=recorder.current?.state==="recording";
+              if(!active){
+                if(moving&&state.stable>=5){
+                  startRecording();state.recordStarted=now;state.lastMovement=now;state.stable=0;
+                }else if(!moving)state.stable=Math.min(30,state.stable+1);
+              }else{
+                if(moving)state.lastMovement=now;
+                if(now-state.recordStarted>2400&&(now-state.lastMovement>1700||now-state.recordStarted>14000)){
+                  stopRecording();state.stable=0;state.lastHand=null;
+                }
+              }
+            }
+          }
+        }catch{state.enabled=false;setAutoCaptureOn(false);setStatus("자동 움직임 추정 오류. 직접 녹화 버튼을 사용하세요.");return;}
+      }
+      state.raf=requestAnimationFrame(loop);
+    };
+    autoCapture.current.raf=requestAnimationFrame(loop);
+  }
+
   async function detectTimeline(kind){
     const video=kind==="mine"?ownVideo.current:proVideo.current;
     if(!video||!Number.isFinite(video.duration)||video.duration<=0){setStatus("먼저 재생 가능한 영상을 불러오세요.");return;}
@@ -284,6 +342,9 @@ export default function SwingStudio({standalone=false}){
           <span style={{fontSize:13}}>실제 브라우저 카메라: {cameraFps}fps {recording?"· 녹화 중":""}</span>
           <button style={btn} type="button" onClick={cameraOn?stopCamera:startCamera}>{cameraOn?"카메라 종료":"카메라 켜기"}</button>
           {cameraOn&&<button style={btn} type="button" onClick={recording?stopRecording:startRecording}>{recording?"■ 녹화 종료":"● 스윙 녹화"}</button>}
+          {cameraOn&&<button style={btn} type="button" onClick={toggleAutoCapture}>{autoCaptureOn?"■ 스윙 자동 감지 중지":"◎ 스윙 움직임 자동 녹화"}</button>}
+          {autoCaptureOn&&<small role="status">자동 녹화 대기 중 · 움직임 감지 시 시작, 약 1.7초 안정되면 종료 · 한 번에 마지막 영상 분석</small>}
+          <small style={{color:"#546974"}}>움직임 자동 감지는 실험적 기능으로 오작동할 수 있으며, 촬영 전후 여유구간은 보장하지 않습니다. 백그라운드 녹화는 지원하지 않습니다.</small>
           <small style={{color:"#546974"}}>브라우저의 고속 촬영 지원은 기기마다 다릅니다. 실제 240fps 확보에는 삼성 카메라 촬영 후 영상 가져오기를 권장합니다.</small>
         </div>
       </div>
