@@ -42,7 +42,7 @@ export function estimateARMeasurements({base,top,left,right,crownLeft,crownRight
   }
   const diameter=pointDistance(left,right);
   if(diameter!=null&&diameter>0)result.B=+(diameter*100).toFixed(1);
-  const canopy=pointDistance(crownLeft,crownRight);
+  const canopy=crownLeft&&crownRight&&[crownLeft.x,crownLeft.z,crownRight.x,crownRight.z].every(Number.isFinite)?Math.hypot(crownLeft.x-crownRight.x,crownLeft.z-crownRight.z):null;
   if(canopy!=null&&canopy>0)result.W=+canopy.toFixed(2);
   const c=Number(confidence);
   result.quality=Number.isFinite(c)&&c>=.8?"추정·깊이신뢰도 높음":Number.isFinite(c)&&c>=.5?"추정·현장 재확인":"추정·신뢰도 낮음";
